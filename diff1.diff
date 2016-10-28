@@ -1,0 +1,13 @@
+diff --git a/app/views/header.htm b/app/views/header.htm
+index 6170229..8c91d3e 100755
+--- a/app/views/header.htm
++++ b/app/views/header.htm
+@@ -26,7 +26,7 @@
+     <body>
+ <!-- contents of header.htm -->
+         <div class="container">
+-		V0.45 (validations and audit trail and pwd change)
++		V0.46 (validations and audit trail and pwd change release)
+            <check if ="{{ @page_head == 'Admin' }}">
+ 		   <true>
+ 		   <include href="admin/nav.htm" />

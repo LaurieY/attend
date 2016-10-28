@@ -1,0 +1,22 @@
+<script type="text/javascript">
+$(function () {
+
+             var retval = confirm("Reverse Rollover requested\n You are about to delete data from U3A Year \n {{@revu3ayear}}");
+   			if( retval == true ){//alert("User wants to perform Reverse Rollover! and delete {{@revu3ayear}} data");
+			var retval2 = confirm("Are you sure you want to perform tReverse Rollover! and delete {{@revu3ayear}} data");
+				if (retval2==true) {
+				//perform rollover action 
+				window.location.href = "/reverserollover2";
+				return true;
+				}
+				else{
+				}
+			return false;
+			}else{
+				alert("User does not want to Perform ReverseRollover\n ");
+				return false;
+			}
+			
+			
+});
+</script>

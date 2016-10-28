@@ -1,0 +1,96 @@
+diff --git a/.gitignore b/.gitignore
+index 79d6aa2..8f46bca 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -164,4 +164,6 @@ pip-log.txt
+ # Mine
+ *.log
+ *.gz
++*.zip
+ lib/api/*
++*.diff
+diff --git a/app/controllers/MemberController.php b/app/controllers/MemberController.php
+index 1670fab..55e6f1c 100644
+--- a/app/controllers/MemberController.php
++++ b/app/controllers/MemberController.php
+@@ -65,7 +65,7 @@ class MemberController extends Controller {
+ 			$auth_logger->write( ' SESSION contents = '.var_export($f3->get('SESSION'), true));
+ 	$thisuserid= $f3->get('POST.user_id');
+ 	$thispassword = $f3->get('SESSION.password') ;
+-		if ($this->checkpwd($thisuserid,$thispassword) ){$f3->reroute('/');
++		if ($this->checkpwd($thisuserid,$thispassword) ){$f3->reroute('/members');
+ 		
+ 		}
+ 		else 
+@@ -238,7 +238,7 @@ function logout() {
+ 		$this->f3->clear('SESSION');
+ 		
+ 		$this->f3->reroute('/login');
+-	//$this->f3->reroute('/z');
++
+ 	}		
+ 	
+ public function payments ()
+diff --git a/app/views/header.htm b/app/views/header.htm
+index e83d5a1..bc44a7f 100644
+--- a/app/views/header.htm
++++ b/app/views/header.htm
+@@ -27,7 +27,7 @@
+     <body>
+ <!-- contents of header.htm -->
+         <div class="container">
+-		V0.48 (validations and audit trail and pwd change release, COOKIE fixes)
++		V0.49 (validations and audit trail and pwd change release, COOKIE fix 2)
+            <check if ="{{ @page_head == 'Admin' }}">
+ 		   <true>
+ 		   <include href="admin/nav.htm" />
+diff --git a/app/views/member/list.htm b/app/views/member/list.htm
+index 91beb48..8f02038 100644
+--- a/app/views/member/list.htm
++++ b/app/views/member/list.htm
+@@ -156,11 +156,20 @@ else alert("Error on Add Member ");
+  }  
+  /**************  DELETE BUTTON ****/
+ $("#bdel").click(function(){
+-var gr = jQuery("#list").jqGrid('getGridParam','selrow');
+-	jQuery("#list").jqGrid('delGridRow',gr,{dataheight:100,height:200,width:500,afterSubmit:afterFormDel,});
++var grid = $("#list");
++var gr = grid.jqGrid('getGridParam','selrow');
++if( gr != null ){
++	grid.jqGrid('delGridRow',gr,{dataheight:100,height:200,width:500,afterSubmit:afterFormDel,beforeShowForm: function ($form) {
++ 	var delrow2=grid.jqGrid('getLocalRow',gr);
++	$("td.delmsg", $form[0]).html("Do you really want delete this row <br/>with <b>member number=" +
++         delrow2.membnum + " and surname=" +delrow2.surname  +"</b> ?");} 
++		 })}
++		
++		 else alert("Please Select Row");
++});
+ 	//jQuery("#list").jqGrid('delGridRow',gr,{dataheight:100,height:200,width:500,closeAfterEdit:true,});
+ 	
+-});	
++
+ function afterFormDel(response, postdata) 
+  { var grid = $("#list");
+  			//$showit=$.parseJSON(response.responseText);
+diff --git a/index.php b/index.php
+index 52f4fd5..11b5891 100644
+--- a/index.php
++++ b/index.php
+@@ -11,7 +11,7 @@ $f3->route('GET /membergrid [ajax]','AjaxController->members');
+ $f3->route('GET /usergrid [ajax]','AjaxController->users');
+ $f3->route('POST /edituser [ajax]','AjaxController->edituser');
+ 
+-$f3->route('GET /','MemberController->index');
++$f3->route('GET /members','MemberController->index');
+ $f3->route('GET /payments','MemberController->payments'); 
+ 
+ $f3->route('POST /editmember [ajax]','AjaxController->editmember');
+@@ -24,6 +24,7 @@ $f3->route('GET /subscribe1','EmailController->subscribe1');
+ $f3->route('GET /subscribe2','EmailController->subscribe2'); 
+ $f3->route('GET /batchsubscribe2','EmailController->batch_subscribe2'); 
+ 
++$f3->route('GET /','MemberController->login');
+ $f3->route('GET /login','MemberController->login');
+ $f3->route('GET /logout','MemberController->logout');
+ $f3->route('POST /login','MemberController->auth');
+

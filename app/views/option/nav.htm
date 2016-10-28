@@ -1,0 +1,35 @@
+<div class="navbar">
+<!-- in member nav.htm -->
+    <div class="navbar-inner">
+        <ul class="nav">
+          
+            <!-- check if="{{ 0 === strpos(@page_head, 'Member List')||@page_head == 'Update Payments'}} " --> 
+			<check if="{{ @page_head != 'Login'}} "> 
+			<true>
+			<li class="active" ><a href="{{ @BASE.'/members' }}"><em class="icon-th icon-black"></em> View Members</a></li>
+            <li class="active" ><a href="{{ @BASE.'/changeme' }}"><em class="icon-th icon-black"></em> Change My Details</a></li>
+			<li class="active"><a href="{{ @BASE.'/exports' }}"><em class="icon-th icon-black"></em> List Exports</a></li>
+			<check if="{{ @page_role == 'user'}}">
+			<!-- page role is not user but we are in member list / not in Login--> 
+			<false>
+			<li class="active"><a href="{{ @BASE.'/payments' }}"><em class="icon-th icon-black"></em> Member Payments</a></li>
+			
+    		 </false></check>
+			
+			<check if="{{ @page_role == 'admin' }}">
+			<!-- page role is admin -->
+          <true>
+			<li class="active"> <a href="{{ @BASE.'/users' }}"><i class="icon-th icon-black"></i>Users</a></li>
+			<li class="active"> <a href="{{ @BASE.'/trail' }}"><i class="icon-th icon-black"></i>Audit Trail</a></li>
+            <li class="active"> <a href="{{ @BASE.'/options' }}"><i class="icon-plus-sign icon-black"></i>Option Settings</a></li>
+           </true>
+            </check>
+			<li class="active"> <a href="{{ @BASE.'/logout' }}"><i class="icon-th icon-black"></i>Logout</a></li>
+			</true></check>
+
+           
+        </ul>
+		<!-- member nav after /ul-->
+    </div>
+	<div id="myrole" style="display:none;">{{@page_role}}</div>
+</div>

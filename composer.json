@@ -1,0 +1,9 @@
+{
+    "require": {
+        "mailchimp/mailchimp": "dev-master",
+		
+        "drewm/mailchimp-api": "dev-api-v3",
+		 
+		 "guzzlehttp/guzzle": "~6.0"
+    }
+}

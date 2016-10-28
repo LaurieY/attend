@@ -1,0 +1,25 @@
+THIS is THE email LIST LIst
+<h2>Lists</h2>
+<table class="table table-bordered">
+    <tr>
+        <th>ID</th>
+		<th>Name</th>
+        <th>Subscriber Count</th>
+        <th>Date Created</th>
+        <th>List Rating</th>
+    </tr>
+
+
+ 
+    <repeat group="{{ @lists }}" value="{{ @list }}">
+        <tr>
+		<td>{{ trim(@list.id) }}</td>
+		<td>{{ trim(@list.name) }}</td>
+            <td>{{ trim(@list.stats.member_count) }}</td>
+            <td>{{ trim(@list.date_created) }}</td>
+			 <td>{{ trim(@list.list_rating) }}</td>
+	      
+
+        </tr>
+    </repeat>
+ </table>

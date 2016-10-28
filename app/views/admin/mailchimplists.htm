@@ -1,0 +1,184 @@
+<script type="text/javascript">
+$(function () {
+  $("#mailinglists").jqGrid({ 
+        url: "/getmailchimplistsgrid",
+		editurl:"/editmailinglist",
+        datatype: "json",
+		ignoreCase: true,
+        mtype: "GET",
+        colNames: ["List Name","List ID",  "List Beamer Address","Members","Cleaned","Unsubscribed"
+//		"Selection Query",
+		],
+        colModel: [
+             {name: "name", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+ 			{ name: "id", width: 220,editable: true, edittype:"text",editrules: { required: true}},
+              {name: "beamer_address", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+            // {name: "mmpwd", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+            // {name: "memberquery", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+              {name: "membcount", width: 100,editable: false, edittype:"text", editrules: { required: true}},      
+              {name: "cleancount", width: 100,editable: false, edittype:"text", editrules: { required: true}},      
+              {name: "unsubcount", width: 100,editable: false, edittype:"text", editrules: { required: true}},      
+			 
+			 
+		
+			
+        ],
+					pager: "#pager",
+			page:1, //LEY
+
+			onSelectRow: editRow,
+			rowNum: 6, 
+			rowList: [6,  10],
+			sortname: "id",
+			sortorder: "asc", 
+			viewrecords: true,
+
+			gridview: true,
+			autoencode: true,
+			caption: "Mailing List Table",
+			height:'auto',
+			altRows: false,
+			footerrow : false,
+			userDataOnFooter : false,
+			multiselect: false,
+				 loadonce:true,
+			ajaxRowOptions: { async: true },
+			//cellEdit:true,
+			// multikey: "ctrlKey", 
+                onSelectRow: function(rowid, selected) {
+					if(rowid != null) {
+					// get list selection from id
+					xselection=$("#mailinglists").jqGrid('getCell',rowid,'id');
+						$("#jqGridDetails").jqGrid('setGridParam',{url: "/mailchimplistdetail/"+xselection,datatype: 'json'}); // the last setting is for demo only
+						$("#jqGridDetails").jqGrid('setCaption', 'Mail List::'+xselection);
+						$("#jqGridDetails").trigger("reloadGrid");
+					}					
+				}, // use the onSelectRow that is triggered on row click to show a details grid
+				onSortCol : clearSelection,
+				onPaging : clearSelection,
+	
+	 
+    }); 
+            var lastSelection;
+function editRow(id) { var grid = $("fees#list");
+                if (id && id !== lastSelection) {
+                   
+                    grid.jqGrid('restoreRow',lastSelection);
+                  //grid.jqGrid('editRow',id, {keys:true, focusField: 4}); 
+				 } 
+				 grid.jqGrid('FormToGrid', id,'#FormPost');
+				 grid.jqGrid('editRow',id, true,  {height:280,reloadAfterSubmit:true,closeAfterAddL:true,closeAfterEdit:true,closeOnEscape:true},'','','');//,editreload); //rowid, keys, oneditfunc, successfunc, url, extraparam, aftersavefunc,errorfunc, afterrestorefunc
+                    lastSelection = id;
+					//$("#"+id+"_formattedvalue").focus();
+                
+            }
+$('#mailinglists').jqGrid('navGrid','#pager',
+		{ edit: true, add: true, del: true, search: false, refresh: true, view: false, position: "left", cloneToTop: false, },
+		{afterSubmit: function(response, postdata) { $("#mailinglists").trigger("reloadGrid");return true;},
+		//},		
+		 beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).hide(); }  // for edit
+		}, // use default settings for edit
+		{dataheight:'350px',beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).show();$('#tr_paidthisyear', form).show(); }}, // use default settings for add
+		{},  // refresh   //for delete
+		{closeAfterAdd: true, 
+                    recreateForm: true
+				   }, // enable the advanced searching
+		{closeOnEscape:true}
+	
+
+                  );
+		//$('#mailinglists').jqGrid('filterToolbar',{searchOperators: true,	});
+
+
+		
+		// detail grid
+        $("#jqGridDetails").jqGrid({
+			url: "/mailchimplistdetail/0",
+            mtype: "GET",
+            datatype: "json",
+            page: 1,
+
+			colNames: ["Member Name","Email","Status","Member No",
+	
+					],
+			colModel: [
+ 			{ name: "membname", width: 100,editable: false, edittype:"text",editrules: { required: true}},
+              {name: "email", width: 100,editable: false, edittype:"text", editrules: { required: true}},      
+              {name: "status", width: 100,editable: false, edittype:"text", editrules: { required: true}},      
+              {name: "membnum", width: 100,editable: false, edittype:"number", searchoptions : {sopt: ["eq"] }, searchrules:{integer:true},sorttype:'number'},      
+
+			 
+		
+			
+        ],
+			sortname: "membnum",
+			sortorder: "asc",
+			width: 780,
+			rowNum: 10,
+			loadonce: true,
+			height: '300',
+			rowList: [10,20,30],
+			viewrecords: true,
+			caption: 'Mail List::',
+						sortname: "membnum",
+			sortorder: "asc", 
+
+
+			gridview: true,
+			autoencode: true,
+						ajaxRowOptions: { async: true },
+			pager: "#jqGridDetailsPager"
+		});		
+
+function clearSelection() {
+				jQuery("#jqGridDetails").jqGrid('setGridParam',{url: "/mailchimplistdetail/0", datatype: 'json'}); // the last setting is for demo purpose only
+				jQuery("#jqGridDetails").jqGrid('setCaption', 'Mail List:: none');
+				jQuery("#jqGridDetails").trigger("reloadGrid");
+				
+			}
+/**************  Show emails missing from mailinglist ****/
+$("#bemailmissing").click(function(){
+
+var grid = $("#mailinglists");
+	var rowid = grid.jqGrid('getGridParam','selrow');
+
+		xselection=grid.jqGrid('getCell',rowid,'memberselection');
+		jQuery("#jqGridDetails").jqGrid('setGridParam',{url: "/mailmissing/"+xselection,datatype: 'json'}); // the last setting is for demo only
+		jQuery("#jqGridDetails").jqGrid('setCaption', 'Mail List Missing::'+xselection);
+		jQuery("#jqGridDetails").trigger("reloadGrid");
+		
+
+});
+$("#bemailrewrite").click(function(){
+
+var grid = $("#mailinglists");
+	var rowid = grid.jqGrid('getGridParam','selrow');
+		xselection=grid.jqGrid('getCell',rowid,'memberselection');
+		//**********  rewrite (replace) the selected mailing list then show any differences (should be zero diffs)
+		jQuery("#jqGridDetails").jqGrid('setGridParam',{url: "/mailrewrite/"+xselection,datatype: 'json'}); // the last setting is for demo only
+
+
+		jQuery("#jqGridDetails").jqGrid('setCaption', 'Mail List Rewriting::'+xselection);
+		//jQuery("#jqGridDetails").trigger("reloadGrid");	
+		
+		jQuery("#jqGridDetails").jqGrid('setGridParam',{url: "/mailmissing/"+xselection,datatype: 'json'}); // the last setting is for demo only
+		jQuery("#jqGridDetails").jqGrid('setCaption', 'Mail List Missing after Rewrite::'+xselection);
+		jQuery("#jqGridDetails").trigger("reloadGrid");	
+	
+	});
+});
+
+
+</script>
+ 
+
+    <table id="mailinglists"><tr><td></td></tr></table> 
+    <div id="pager"></div> 
+		
+	<br>
+	<input type="BUTTON" id="bemailmissing" value="Show Emails Missing" /> 
+	<input type="BUTTON" id="bemailrewrite" value="re-write mailinglist" /> 
+	  
+        <table id="jqGridDetails"></table>
+        <div id="jqGridDetailsPager"></div>
+ 

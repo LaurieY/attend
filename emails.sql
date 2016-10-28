@@ -1,0 +1,1 @@
+SELECT email, '(',CONCAT(forename,' ',surname) AS mname,')' FROM `members` where `u3ayear` = '2015-2016' and status ='Active' and email <> ''  group by email order by email

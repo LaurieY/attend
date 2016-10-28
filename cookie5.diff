@@ -1,0 +1,137 @@
+diff --git a/.gitignore b/.gitignore
+index 8f46bca..8c5cd5e 100755
+--- a/.gitignore
++++ b/.gitignore
+@@ -167,3 +167,4 @@ pip-log.txt
+ *.zip
+ lib/api/*
+ *.diff
++error_log
+\ No newline at end of file
+diff --git a/add_feewhere.sql b/add_feewhere.sql
+index df09578..e42adb0 100755
+--- a/add_feewhere.sql
++++ b/add_feewhere.sql
+@@ -1,2 +1,21 @@
+ ALTER TABLE  `members` ADD  `feeewhere` VARCHAR( 32 ) NOT NULL DEFAULT  'Treasurer' AFTER  `datepaid`
+-ALTER TABLE  `trail` ADD  `feeewhere` VARCHAR( 32 )  NULL AFTER  `datepaid`
+\ No newline at end of file
++ALTER TABLE  `trail` ADD  `feeewhere` VARCHAR( 32 )  NULL AFTER  `datepaid`
++
++ALTER TABLE  `membersh` ADD  `fyear` VARCHAR( 4 ) NULL AFTER  `feeewhere` ,
++ADD  `u3ayear` VARCHAR( 10 ) NULL AFTER  `fyear`
++UPDATE `membersh` SET `u3ayear` ='2014-2015' WHERE 1
++UPDATE `membersh` SET `fyear` ='2015' WHERE `membtype` ='MJL1'
++UPDATE `membersh` SET `fyear` ='2014' WHERE `membtype` ='MJL2'
++UPDATE `membersh` SET `fyear` ='2014' WHERE `fyear` is NULL  // imagine all paid on time
++UPDATE `membersh` SET `fyear` ='2015' WHERE  membnum in (57,85,174,177,179,267,287,315,316,359,419,420,425,426,434,435,441,448,449,473,488)
++
++SELECT count(*), sum(`amtpaidthisyear`) FROM `membersh` WHERE `fyear` ='2014'
++SELECT count(*), sum(`amtpaidthisyear`) FROM `membersh` WHERE `fyear` ='2015'
++
++SELECT `membtype`,count(*), sum(`amtpaidthisyear`) FROM `membersh` WHERE `fyear` ='2014' group by `membtype`
++
++SELECT `membtype`,count(*), sum(`amtpaidthisyear`) FROM `membersh` WHERE `fyear` ='2015' group by `membtype`
++
++
++
++create view members as  SELECT `id`, `surname`, `forename`, `membnum`, `phone`, `mobile`, `email`, `membtype`, `location`, `paidthisyear`, `amtpaidthisyear`, `datejoined`, `datepaid`, `feeewhere`, `created_at`, `updated_at` FROM `membersh` where u3ayear='2014-2015'
+diff --git a/app/controllers/AjaxController.php b/app/controllers/AjaxController.php
+index 67cbc6a..faf3532 100755
+--- a/app/controllers/AjaxController.php
++++ b/app/controllers/AjaxController.php
+@@ -223,7 +223,7 @@ $filters = $f3->get('GET.filters');
+ $admin_logger->write('in fn members filters= '.$filters."\n");
+ 
+ $where = "";
+-        if (isset($filters)) {
++        if (isset($filters)) { // ********************filters NO LONGER USED with local grid
+             $filters = json_decode($filters);
+             $where = " where ";
+             $whereArray = array();
+@@ -322,7 +322,8 @@ $where = "";
+ echo $whh;
+ }
+ else {
+-echo $this->getresult_where("where 1");
++$u3ayear = $members->getu3ayear();
++echo $this->getresult_where("where u3ayear='".$u3ayear."'");
+ }  //end of else of _search
+ } // end of function  members
+ 
+@@ -617,9 +618,10 @@ public function editmember()
+ 		
+ 		$trail->copyfrom('POST');	
+ 		$admin_logger->write('in addmember trail Surname '.$trail->surname);
+-		$admin_logger->write('in addmember trail editor/user_id will be'.$f3->get('SESSION.user_id'  ));
++		$admin_logger->write('in addmember trail editor/user_id will be '.$f3->get('SESSION.user_id'  ));
+ 
+-		$members->save();
++		$members->add();
++		$admin_logger->write('in addmember db log = '.$this->db->log()."\n");
+ 		
+ 		$trail->change="add";
+ 		$trail->editor=$f3->get('SESSION.user_id'  );
+diff --git a/app/models/Member.php b/app/models/Member.php
+index bfff6a0..e865bc3 100755
+--- a/app/models/Member.php
++++ b/app/models/Member.php
+@@ -7,16 +7,31 @@ class Member extends DB\SQL\Mapper {
+     }
+ 
+     public function all() {
+-        $this->load();
++       // $this->load();
++		// need to filter by current u3ayear
++		$this->load(array('u3ayear =:u3ayear',array(':u3ayear'=> $this->getu3ayear()) ) );
+ 		//$this->first();
+         return $this->query;
+     }
+ 
+     public function add() {
+-        $this->copyFrom('POST');
++      //  $this->copyFrom('POST');
++		$this->u3ayear=getu3ayear();
++		$this->fyear=(string) getdate()['year'];
++		$this->created_at=date("Y-m-d H:i:s");
+         $this->save();
+     }
+-
++function getu3ayear(){
++  $today = getdate();
++	  $thismon= $today['mon'];
++	  $thisyear = (string) $today['year'];
++	  $lastyear = (string) $today['year'] -1;
++	  $nextyear = (string) $today['year'] +1;
++	  if ($thismon <7)
++		return $lastyear.'-'.$thisyear;
++		else
++		return $thisyear.'-'.$nextyear;
++}
+     public function getById($id) {
+         $this->load(array('id=?',$id));
+         $this->copyTo('POST');
+diff --git a/app/views/member/list.htm b/app/views/member/list.htm
+index 8f02038..c519636 100755
+--- a/app/views/member/list.htm
++++ b/app/views/member/list.htm
+@@ -9,6 +9,7 @@ else myeditability=true;
+         url: "/membergrid",
+ 		editurl:"/editmember",
+         datatype: "xml",
++		ignoreCase: true,
+         mtype: "GET",
+         colNames: ["Surname", "Forename", "Num.", "Phone","Mobile","Email","Type","Location","Paid","Amt Paid","Joined"],//],
+         colModel: [
+diff --git a/app/views/member/listpaid.htm b/app/views/member/listpaid.htm
+index f45bd1c..95bc350 100755
+--- a/app/views/member/listpaid.htm
++++ b/app/views/member/listpaid.htm
+@@ -13,6 +13,7 @@ $(function () {
+         url: "/membergrid",
+ 		editurl:"/editmember",
+         datatype: "xml",
++		ignoreCase: true,
+         mtype: "GET",
+         colNames: ["Surname", "Forename", "Num.", "Phone","Mobile","Email","Type","Location","Paid","Amt Paid",
+ 		//"Joined",

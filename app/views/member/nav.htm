@@ -1,0 +1,58 @@
+<div class="navbar">
+<!-- in member nav.htm -->
+    <div class="navbar-inner"> 
+        <ul class="nav">
+          <check if="{{@page_role == 'register'}}">
+		  <true> 
+		   <li class="active"> <a href="{{ @BASE.'/logout' }}">Logout</a></li></ul>
+		  </true>
+		  <false>
+            <!-- check if="{{ 0 === strpos(@page_head, 'Member List')||@page_head == 'Update Payments'}} " --> 
+			<check if="{{ @page_head != 'Login'}} "> 
+			<true>
+			<li class="active" ><a href="{{ @BASE.'/members' }}"> View Members</a></li>
+            <li class="active" ><a href="{{ @BASE.'/changeme' }}"> Change My Details</a></li>
+			<li class="active"><a href="{{ @BASE.'/exports' }}"> Reports</a></li>
+			<li class="active"><a href="{{ @BASE.'/exports' }}">Attendance List</a></li>
+			<check if="{{ @page_role == 'user'}}">
+			<!-- page role is not user but we are in member list / not in Login--> 
+			<false>
+			<li class="active"><a href="{{ @BASE.'/payments' }}"> Member Payments</a></li>
+			<li class="active"><a href="{{ @BASE.'/wherefees' }}"> Locate Payments</a></li>
+			
+    		 </false>
+			 <li class="active"> <a href="{{ @BASE.'/logout' }}">Logout</a></li></check>
+
+
+			</ul>
+    </div>
+    </div>
+<check if="{{ @page_role == 'admin' }}">
+			<!-- page role is admin -->
+          <true>
+		  	<div class="jumbotron">
+                <h1>Admin</h1>
+            </div>	
+<div class="navbar">
+			<div class="navbar-inner">
+			<ul class="nav">
+			<li class="active"> <a href="{{ @BASE.'/users' }}">Users</a></li>
+			<li class="active"> <a href="{{ @BASE.'/trail' }}">Audit Trail</a></li>
+            <li class="active"> <a href="{{ @BASE.'/options' }}">Option Settings</a></li>
+            <li class="active"> <a href="{{ @BASE.'/fees' }}">Fees</a></li>
+            <li class="active"> <a href="{{ @BASE.'/mailinglists' }}">Mailing Lists</a></li>
+            <li class="active"> <a href="{{ @BASE.'/mailchimplists' }}">MailChimp Lists </a></li>
+		 	</ul>
+			</div>
+          
+		   </true>
+            </check>
+			</false>
+			</check>
+			</check>
+						 			
+
+
+           
+
+	<div id="myrole" style="display:none;">{{@page_role}}</div>

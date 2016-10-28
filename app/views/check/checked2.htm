@@ -1,0 +1,24 @@
+
+
+<repeat group="{{ @sheet }}" key="{{ @rownum }}" value="{{ @arow }}">
+    <div>
+        <p><span><b>{{ @rownum }}</b></span>
+       
+        <repeat group="{{ @arow }}" value="{{ @acol }}">
+            <span>{{ @acol }}</span>
+        </repeat></p>
+        </p>
+    </div>
+</repeat>
+<div class="navbar">
+<!-- in member nav.htm -->
+    <div class="navbar-inner">
+        <ul class="nav">
+          
+            <!-- check if="{{ 0 === strpos(@page_head, 'Member List')||@page_head == 'Update Payments'}} " --> 
+			<check if="{{ @page_head != 'Login'}} "> 
+			<true>
+			<li class="active" ><a href="{{ @BASE.'/check2' }}"> Try Another Sheet</a></li>
+			</ul>
+    </div>
+    </div>

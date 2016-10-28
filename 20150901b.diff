@@ -1,0 +1,528 @@
+diff --git a/app/controllers/AdminAjaxController.php b/app/controllers/AdminAjaxController.php
+index 9188424..b6d424e 100644
+--- a/app/controllers/AdminAjaxController.php
++++ b/app/controllers/AdminAjaxController.php
+@@ -185,7 +185,7 @@ function mailinglistgrid () {
+ 	while ( !$mailinglist->dry() ) {  // gets dry when we passed the last record
+ 	//$admin_logger->write('in fn mailinglistgrid with i='.$i,$uselog);
+ 	$response->rows[$i]['id']=$mailinglist['id'];
+-	$response->rows[$i]['cell']=array($mailinglist['memberselection'],$mailinglist['mmurl'],$mailinglist['mmlist'],$mailinglist['mmpwd']);
++	$response->rows[$i]['cell']=array($mailinglist['memberselection'],$mailinglist['mmurl'],$mailinglist['mmlist'],$mailinglist['mmpwd'],$mailinglist['memberquery']);
+ 	// moves forward even when the internal pointer is on last record
+ 	$i++;
+ 	$mailinglist->next();
+diff --git a/app/controllers/EmailController.php b/app/controllers/EmailController.php
+index 3abba64..9cc7410 100644
+--- a/app/controllers/EmailController.php
++++ b/app/controllers/EmailController.php
+@@ -16,7 +16,7 @@ public function email2(){
+ 		
+ 		$this->f3->set('page_head','Email');
+         $this->f3->set('message', $this->f3->get('PARAMS.message'));
+-	//	$admin_logger->write('in admin index PARAMS.message is '.$f3->get('PARAMS.message'));
++	//	$email_logger->write('in admin index PARAMS.message is '.$f3->get('PARAMS.message'));
+ 	$f3->set('page_role',$f3->get('SESSION.user_role'));
+         $this->f3->set('view','admin/list.htm');
+ }
+@@ -426,6 +426,107 @@ function daily_mailman_check() {
+ 	**********											mmurl with value for mmurl for all 
+ 	*****  For each mmlist entry compare the contents of the list with a table extract of emails for this u3ayear and the mmtype value
+ 	********************************/
++	$f3=$this->f3;
++	$mailinglist =	new Mailinglist($this->db);
++	$members =	new Member($this->db);
++	$uselog=$f3->get('uselog');
++	$email_logger = new MyLog('email.log');
++	$email_logger->write('in daily_mailman_check ',$uselog);	
++	/* Get all mailing lists */
++	$count=$mailinglist->count();
++	$mailinglist->load();
++	$i=0;
++	while ( !$mailinglist->dry() ) {  // gets dry when we passed the last record
++	// get the mailing list and then the details 
++	$thediff=$this->compare_missingmembers($mailinglist);
++
++//	$email_logger->write('in daily_mailman_check thelist = '.var_export($mailinglist,true),$uselog);
++	// Now get the membership contents appropriate to the particular list 	
++	//	$email_logger->write('in daily_mailman_check unique selection  = '.$mailinglist->memberquery,$uselog);
++
++	// return an array of 2 arrays, 1st is the email list in alpha order, 2nd is the names corresponding TO THEM
++	// only interested in the 1st, the email list really 
++//	$email_logger->write('in daily_mailman_check thememberslist = '.var_export($thememberslist,true),$uselog);
++	//$email_logger->write('in daily_mailman_check missing from mailing list '.$mailinglist->memberselection .' vs  '.$mailinglist->memberquery . ' = '.var_export($thediff,true),$uselog);
++
++
++	$email_logger->write('in daily_mailman_check missing from mailing list '.$mailinglist->memberselection .' vs  '.$mailinglist->memberquery . ' = '.var_export($thediff,true),$uselog);
++	$i++;
++	$mailinglist->next();
++	}
++	
++}
++function compare_missingmembers($mailinglistname) {
++			$f3=$this->f3;
++			$uselog=$f3->get('uselog');
++			$email_logger = new MyLog('email.log');
++		$email_logger->write('in compare_missingmembers with listname '.$mailinglistname,$uselog);	
++			$mailinglist =new Mailinglist($this->db);
++			$mailinglist->load(array('memberselection =:id',array(':id'=> $mailinglistname) ) );
++		//	$email_logger->write('in compare_missingmembers with mailinglist '.var_export($mailinglist,true),$uselog);	
++
++			$mmurl = $mailinglist->mmurl;
++			$mmlist =  $mailinglist->mmlist;
++			$mmpw =  $mailinglist->mmpwd;
++	//	$email_logger->write('in daily_mailman_check unique selection  = '.var_export($mailinglist,true),$uselog);			
++	$thelist = $this->mailmanlist($mmurl,$mmlist,$mmpw);
++	
++	$email_logger->write('in compare_missingmembers thelist = '.var_export($thelist,true),$uselog);
++	// Now get the membership contents appropriate to the particular list 	
++	//	$email_logger->write('in daily_mailman_check unique selection  = '.$mailinglist->memberquery,$uselog);
++
++	$thememberslist = $this->membersemailist($mailinglist->memberquery);  // pass a partial where statement for the member selection in the form membertpe in ('GL')
++	$email_logger->write('in compare_missingmembers  478 thelist = '.var_export($thememberslist,true),$uselog);
++
++	// return an array of 2 arrays, 1st is the email list in alpha order, 2nd is the names corresponding TO THEM
++	// only interested in the 1st, the email list really 
++//	$email_logger->write('in daily_mailman_check thememberslist = '.var_export($thememberslist,true),$uselog);
++	/***********  Now compare the two **********/
++	$thediff =array_diff($thememberslist ,$thelist[0]);
++		$email_logger->write('in compare_missingmembers thediff = '.var_export($thediff,true),$uselog);
++
++	return $thediff;
++}
++/***************
++** return an array of 2 arrays, 1st is the email list in alpha order, 2nd is the names corresponding TO THEM
++** only interested in the 1st, the email list really 
++*****************/
++function membersemailist($memberquery){
++	$f3=$this->f3;
++	$members =	new Member($this->db);
++	$memblist=$members->load();
++	$membemails= $this->db->exec('SELECT distinct(email) as unqemail from members where u3ayear = '.'"2015-2016"'. ' and status ="Active" and email <> "" ' .$memberquery.' order by unqemail;');
++	$output = iterator_to_array(new RecursiveIteratorIterator(
++    new RecursiveArrayIterator($membemails)), FALSE);
++	return array_values($output);
++	
++	
++}
++function mailmissing() {
++		$f3=$this->f3; 
++		$uselog=$f3->get('uselog');
++	$email_logger = new MyLog('email.log');
++
++	$mailinglistname = $f3->get('PARAMS.listname');
++	$missingarray= $this->compare_missingmembers($mailinglistname);
++	$mailinglist =new Mailinglist($this->db);
++$email_logger->write('in mailmissing li 513  missingarray = '.var_export($missingarray,true),$uselog);
++	$missinggcsv= $this->array_2_csv($missingarray);
++	$mailinglist->load(array('memberselection =:id',array(':id'=> $mailinglistname) ) );
++
++	$missingnameswhere= $mailinglist->memberquery;
++	$options->initu3ayear();
++	$u3ayear = $f3->get('SESSION.u3ayear');
++	$missingarraynames = $this->db->exec("SELECT CONCAT(forename,' ',surname) AS mname FROM `members` where email in (".$missinggcsv.") and `u3ayear` = '".$u3ayear."' and status ='Active' and email <> '' ".$missingnameswhere. " group by email order by email");
++	$missingarraynamesv = iterator_to_array(new RecursiveIteratorIterator(
++		new RecursiveArrayIterator($missingarraynames)), FALSE); // flattens the query result
++	$email_logger->write('in mailmissing li 521  missingarraynames = '.var_export($missingarraynames,true),$uselog);
++	$email_logger->write('in mailmissing li 522  missingarraynamesv = '.var_export($missingarraynamesv,true),$uselog);
++	$thenewlist = array_map(null, $missingarray,$missingarraynamesv);
++	$email_logger->write('in mailmissing li 524  missingarray = '.var_export($missingarray,true),$uselog);
++	// make it an array with each entry being a 2 elemnt array as that's what I have arraytojson expecting
++	echo $this->arraytojson($thenewlist);
++	//echo '{"page":1,"records":5,"rows":[{"id":1,"cell":["laurie.lyates@gmail.com",""]},{"id":2,"cell":["laurie3@lyates.com","Laurie Three,Laurieb Three,Lauriec Three,Lauried Three"]},{"id":3,"cell":["laurie_test1b@lyates.com","Laurie test1b"]},{"id":4,"cell":["laurie_test2@lyates.com","laurie hots"]},{"id":5,"cell":["laurie_yates2001@yahoo.co.uk","Laurie atyahoo"]}]}';
+ }
+ function mailinglistdetail() {
+ 	//echo '{"page":"1","total":1,"records":"1","rows":[{"id":1,"cell":["Fred Bloggs,"test@lates.com"]}]}';
+@@ -433,54 +534,24 @@ function mailinglistdetail() {
+ 		$uselog=$f3->get('uselog');
+ 		$email_logger = new MyLog('email.log');
+ 		$listnum=$f3->get('PARAMS.listnum');
+-		$email_logger->write('in mailmanlistdetail for list = '.$listnum,$uselog);
++	//	$email_logger->write('in mailmanlistdetail for list = '.$listnum,$uselog);
+ 		$mailinglist = new Mailinglist($this->db);
+ 		$listname = $mailinglist->load(array('memberselection =:id',array(':id'=> $listnum) ) );
+ 		//		$email_logger->write('in mailmanlistdetail for listnum = '.$listnum,$uselog);
+ 		//		$email_logger->write('in mailmanlistdetail for listname = '.var_export($listname,true),$uselog);
+ 				$email_logger->write('in mailmanlistdetail for listname = '.$listname->memberselection,true,$uselog);
+ 
+-	/* 	switch($listname->memberselection)  {
+-			case 'All':
+-			//echo '{"page":"1","total":1,"records":"1","rows":[{"id":1,"cell":["All","http:\/\/mail.lyates.com\/mailman\/admin\/","test_lyates.com","laurie12"]}]}';
+-			$mmurl = 'http://mail.lyates.com/mailman/admin/';
+-			$mmlist = 'test_lyates.com';
+-			$mmpw = 'laurie12';
+-			$thelist = $this->mailmanlist($mmurl,$mmlist,$mmpw);
+-			//Create a 2D array mixing thelist[0] and [1]
+-			$i=0;
+-			/*$thenewlist = array();
+-			for ( $=0;count($thelist[0]); $i++) {
+-			$thenewlist[$i-1] = $thelist[0][$i]
+-			} 
+-		//	$thenewlist = array_merge($thelist[0],$thelist[1]);
+-			$thenewlist = array_map(null, $thelist[0],$thelist[1]);
+-			
+-			
+-					$email_logger->write('in mailmanlistdetail for list = '.var_export($thelist[0],true),$uselog);
+-					$email_logger->write('in mailmanlistdetail for list = '.var_export($thelist[1],true),$uselog);
+-					$email_logger->write('in mailmanlistdetail for list = '.var_export($thenewlist,true),$uselog);
+-					// $email_logger->write('in mailmanlistdetail json for list = '.var_export($this->arraytojson($thelist[0]),true),$uselog);
+-					 $email_logger->write('in mailmanlistdetail json for list = '.var_export($this->arraytojson($thenewlist),true),$uselog);
+ 
+-			//echo json_encode($thelist[0]);
+-			echo $this->arraytojson($thenewlist);
+-			break;
+-			case '0':
+-			echo '{"page":"1","total":1,"records":"1","rows":[{"id":1,"cell":["","","",""]}]}';
+-			break;
+-		}
+-	*/ // end of switch
+ 			$mmurl = $listname->mmurl;
+ 			$mmlist =  $listname->mmlist;
+ 			$mmpw =  $listname->mmpwd;
+ 			$thelist = $this->mailmanlist($mmurl,$mmlist,$mmpw);
+ 			$thenewlist = array_map(null, $thelist[0],$thelist[1]);
+-			$email_logger->write('in mailmanlistdetail for list = '.var_export($thelist[0],true),$uselog);
+-			$email_logger->write('in mailmanlistdetail for list = '.var_export($thelist[1],true),$uselog);
+-			$email_logger->write('in mailmanlistdetail for list = '.var_export($thenewlist,true),$uselog);
++			$email_logger->write('in mailmanlistdetail for thelist[0] '.$mmlist.' = '.var_export($thelist[0],true),$uselog);
++			$email_logger->write('in mailmanlistdetail for thelist[1] '.$mmlist.'  = '.var_export($thelist[1],true),$uselog);
++			$email_logger->write('in mailmanlistdetail for newlist = '.var_export($thenewlist,true),$uselog);
+ 					// $email_logger->write('in mailmanlistdetail json for list = '.var_export($this->arraytojson($thelist[0]),true),$uselog);
+-			$email_logger->write('in mailmanlistdetail json for list = '.var_export($this->arraytojson($thenewlist),true),$uselog);
++			$email_logger->write('in mailmanlistdetail json for list '.$mmlist.' = '.var_export($this->arraytojson($thenewlist),true),$uselog);
+ 
+ 			//echo json_encode($thelist[0]);
+ 			echo $this->arraytojson($thenewlist);
+@@ -496,7 +567,7 @@ function mailmanlist($mmurl,$mmlist,$mmpw) {
+ 			$f3=$this->f3; 
+ 		$uselog=$f3->get('uselog');
+ 		$email_logger = new MyLog('email.log');
+-		$email_logger->write('in mailmanlist for list = '.$mmlist,$uselog);
++	$email_logger->write('in mailmanlist for list = '.$mmlist,$uselog);
+ 
+ 		require_once 'Services/Mailman.php';
+ 		$notice = '';
+@@ -540,5 +611,35 @@ function arraytojson ($arraytosend) {
+ 	return json_encode($response);
+ 	
+ }
++function array_2_csv($array) {
++$csv = array();
++foreach ($array as $item=>$val) {
++    if (is_array($val)) { 
++        $csv[] = $this->array_2_csv($val);
++        $csv[] = "\n";
++    } else {
++        $csv[] = "'".$val."'";
++    }
++}
++return implode(',', $csv);
++}
++
++
++function mailrewrite() {
++		$f3=$this->f3; 
++		$uselog=$f3->get('uselog');
++	$email_logger = new MyLog('email.log');
++
++	$mailinglistname = $f3->get('PARAMS.listname');
++	
++	$mailinglist =new Mailinglist($this->db);
++	//$email_logger->write('in mailrewrite li 634  missingarray = '.var_export($missingarray,true),$uselog);
++	//$missinggcsv= $this->array_2_csv($missingarray);
++	$mailinglist->load(array('memberselection =:id',array(':id'=> $mailinglistname) ) );
++	
++	
++	echo '{"page":1,"records":5,"rows":[{"id":1,"cell":["laurie.lyates@gmail.com",""]},{"id":2,"cell":["laurie3@lyates.com","Laurie Three,Laurieb Three,Lauriec Three,Lauried Three"]},{"id":3,"cell":["laurie_test1b@lyates.com","Laurie test1b"]},{"id":4,"cell":["laurie_test2@lyates.com","laurie hots"]},{"id":5,"cell":["laurie_yates2001@yahoo.co.uk","Laurie atyahoo"]}]}';
++	
++}
+ }
+ 
+diff --git a/app/controllers/ReportController.php b/app/controllers/ReportController.php
+index 7342418..49c3f4a 100644
+--- a/app/controllers/ReportController.php
++++ b/app/controllers/ReportController.php
+@@ -36,7 +36,8 @@ class ReportController extends Controller {
+ //					'paid'=>array('title'=> "U3A Marbella and Inland - Paid Members ".$u3ayear,'sqlselect'=>"select surname as 'Surname',forename as 'Forename',membnum as 'Number',phone as 'Phone',mobile as 'Mobile' ,email as 'Email' from members where u3ayear='".$u3ayear."' and status='Active' and  paidthisyear in ('Y') and membtype in ('M','MJL1')order by surname ASC "),
+ 					'paid'=>array('title'=> "U3A Marbella and Inland - Paid Members ".$u3ayear,'sqlselect'=>"select surname as 'Surname',forename as 'Forename',membnum as 'Number',phone as 'Phone',mobile as 'Mobile' ,email as 'Email' from members where u3ayear='".$u3ayear."' and status='Active' and  paidthisyear in ('Y') order by surname ASC "),
+ 					'lastyear'=>array('title'=> "U3A Marbella and Inland - Last Year Members ".$lastu3ayear,'sqlselect'=>"select surname as 'Surname',forename as 'Forename',membnum as 'Number',phone as 'Phone',mobile as 'Mobile' ,email as 'Email' from members where u3ayear='".$lastu3ayear."' and status='Active' and paidthisyear in ".$paidstatus." order by surname ASC "),
+-					'weekly'=>array('title'=> "U3A Marbella and Inland - This Week's Payers since"."\n".$since,'sqlselect'=>"select surname as 'Surname',forename as 'Forename',membnum as 'Number',phone as 'Phone',mobile as 'Mobile' ,email as 'Email', amtpaidthisyear as 'Fee', feewhere as 'Who has'  from members where u3ayear='".$u3ayear."' and status in ('Active','Left') and paidthisyear in ('Y') and datepaid > NOW() - INTERVAL '". $dayssince ."' DAY  order by surname ASC "),
++					'joiners'=>array('title'=> "U3A Marbella and Inland - This Week's Payers since"."\n".$since,'sqlselect'=>"select surname as 'Surname',forename as 'Forename',membnum as 'Number',phone as 'Phone',mobile as 'Mobile' ,email as 'Email', amtpaidthisyear as 'Fee', feewhere as 'Who has'  from members where u3ayear='".$u3ayear."' and status in ('Active','Left') and paidthisyear in ('Y') and datepaid > NOW() - INTERVAL '". $dayssince ."' DAY  order by surname ASC "),
++					'weekly'=>array('title'=> "U3A Marbella and Inland - This Week\'s Payers since"."\n".$since,'sqlselect'=>"select surname as 'Surname',forename as 'Forename',membnum as 'Number',phone as 'Phone',mobile as 'Mobile' ,email as 'Email', amtpaidthisyear as 'Fee', feewhere as 'Who has'  from members where u3ayear='".$u3ayear."' and status in ('Active','Left') and paidthisyear in ('Y') and datepaid > NOW() - INTERVAL '". $dayssince ."' DAY  order by surname ASC "),
+ 		
+ 					);
+ 					
+@@ -59,6 +60,7 @@ class ReportController extends Controller {
+ 		$admin_logger->write('in writeemailpdf sql  = '.$sql_statement,$uselog);
+ 		switch ($theset)
+ 		{case "weekly":
++		case "joiners":
+ 		$attr = array('titleFontSize'=>18, 'titleText'=>$pdfselect[$theset]['title'],
+ 		'FontSizePt'=>9,
+ 		'tablewidths'=>array(  // change these to get a better fit of columns
+@@ -144,9 +146,9 @@ public function weeklyxmail () {
+ 		$options= new Option($this->db);
+ 		$options->initu3ayear();
+ 		$mypdf= new ReportController();
+-		$dlfilename='downloads/email_list_weekly.pdf';
++		$dlfilename='downloads/email_list_joiners.pdf';
+  
+-		$mypdf->writeemailpdf($dlfilename,'weekly');
++		$mypdf->writeemailpdf($dlfilename,'joiners');
+ 		
+ 		$buffer='';
+ 			$f = fopen($dlfilename,'r');
+@@ -172,7 +174,53 @@ public function weeklyxmail () {
+ 		
+ 		
+ 		}
+-public function financialxmail ($whichfy) {
++public function weeklyreports() {
++		$f3=Base::instance();
++	$reportset = $f3->get('PARAMS.reportset');
++		$since=strftime("%d %b %Y", time() - (7 * 24 * 60 * 60));
++
++		$options= new Option($this->db);
++		$options->initu3ayear();
++		$u3ayear = $f3->get('SESSION.u3ayear');
++		$lastu3ayear = $f3->get('SESSION.lastu3ayear');
++		//$mypdf= new ReportController();
++		$dlfilename='downloads/email_list_'.$reportset.'.pdf';
++ 
++		$this->writeemailpdf($dlfilename,$reportset);
++	$emailinfo = array(
++	'all'=>array('title'=> "U3A Marbella and Inland - Membership List ".$u3ayear),
++					'at'=>array('title'=> "U3A Marbella and Inland - Admin Team ".$u3ayear),
++					'gl'=>array('title'=> "U3A Marbella and Inland - Group Leaders ".$u3ayear),
++					'unpaid'=>array('title'=> "U3A Marbella and Inland - Unpaid Members ".$u3ayear),
++					'willpay'=>array('title'=> "U3A Marbella and Inland - WillPay Members ".$u3ayear),
++					'paid'=>array('title'=> "U3A Marbella and Inland - Paid Members ".$u3ayear),
++					'lastyear'=>array('title'=> "U3A Marbella and Inland - Last Year Members ".$lastu3ayear),
++					'joiners'=>array('title'=> "U3A Marbella and Inland - This Week's Payers since"."\n".$since),
++					'weekly'=>array('title'=> "U3A Marbella and Inland - This Week's Payers since"."\n".$since),
++					);
++					
++$emailtitle = $emailinfo[$reportset]['title'];
++					
++		$buffer='';
++			$f = fopen($dlfilename,'r');
++			if(!$f)
++				$this->Error('Unable to open input file: '.$dlfilename);
++			$buffer=fread($f,(1024*1024));
++			fclose($f);
++			/**  Get emails for weekly report from optionsu3a table
++			***/
++			$weeklylist=$options->find("optionname='".$reportset."email'");
++			foreach ($weeklylist as $weeklymail) {
++
++	$this->xmail($weeklymail->optionvalue, 'laurie@u3a.es',$emailtitle,$buffer,$dlfilename,"F","0.9"	);
++	}		
++		$f3->set('view','member/exports.htm'); 
++		$f3->set('page_head','Primary Member Lists');
++		$f3->set('page_role',$f3->get('SESSION.user_role'))	;	
++			 $f3->set('message','');	
++}
++
++		public function financialxmail ($whichfy) {
+ 		$this->financialreport( $whichfy,"('Active','Left')");
+ 			$f3=$this->f3;		
+ 		$f3->set('view','member/exports.htm'); 
+diff --git a/app/views/admin/mailinglists.htm b/app/views/admin/mailinglists.htm
+index 428bc91..9d9f3c5 100644
+--- a/app/views/admin/mailinglists.htm
++++ b/app/views/admin/mailinglists.htm
+@@ -6,13 +6,15 @@ $(function () {
+         datatype: "json",
+ 		ignoreCase: true,
+         mtype: "GET",
+-        colNames: ["Member Selection","MM URL", "List Name", "List Password", ],
++        colNames: ["Member Selection","MM URL", "List Name", "List Password", "Selection Query",],
+         colModel: [
+            
+ 			{ name: "memberselection", width: 220,editable: true, edittype:"text",editrules: { required: true}},
+              {name: "mmurl", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+              {name: "mmlist", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+              {name: "mmpwd", width: 220,editable: true, edittype:"text", editrules: { required: true}},
++             {name: "memberquery", width: 220,editable: true, edittype:"text", editrules: { required: true}},
++			 
+ 			 
+ 		
+ 			
+@@ -82,6 +84,9 @@ $('#mailinglists').jqGrid('navGrid','#pager',
+ 
+                   );
+ 		//$('#mailinglists').jqGrid('filterToolbar',{searchOperators: true,	});
++
++
++		
+ 		// detail grid
+         $("#jqGridDetails").jqGrid({
+ 			url: "/mailinglistdetail/0",
+@@ -93,13 +98,12 @@ $('#mailinglists').jqGrid('navGrid','#pager',
+                     { label: 'Email', name: 'email', width: 100 }
+  
+ 			], */
+-			        colNames: ["Member Name","Email",
++			        colNames: ["Email","Member Name",
+ 	
+ 					],
+         colModel: [
+-           
++             {name: "email", width: 220,editable: true, edittype:"text", editrules: { required: true}},      
+ 			{ name: "membname", width: 220,editable: true, edittype:"text",editrules: { required: true}},
+-             {name: "email", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+   
+ 			 
+ 		
+@@ -120,8 +124,37 @@ function clearSelection() {
+ 				jQuery("#jqGridDetails").trigger("reloadGrid");
+ 				
+ 			}
++/**************  Show emails missing from mailinglist ****/
++$("#bemailmissing").click(function(){
++
++var grid = $("#mailinglists");
++	var rowid = grid.jqGrid('getGridParam','selrow');
++
++		xselection=grid.jqGrid('getCell',rowid,'memberselection');
++		jQuery("#jqGridDetails").jqGrid('setGridParam',{url: "/mailmissing/"+xselection,datatype: 'json'}); // the last setting is for demo only
++		jQuery("#jqGridDetails").jqGrid('setCaption', 'Mail List Missing::'+xselection);
++		jQuery("#jqGridDetails").trigger("reloadGrid");
++		
+ 
+ });
++$("#bemailrewrite").click(function(){
++
++var grid = $("#mailinglists");
++	var rowid = grid.jqGrid('getGridParam','selrow');
++		xselection=grid.jqGrid('getCell',rowid,'memberselection');
++		//**********  rewrite (replace) the selected mailing list then show any differences (should be zero diffs)
++		jQuery("#jqGridDetails").jqGrid('setGridParam',{url: "/mailrewrite/"+xselection,datatype: 'json'}); // the last setting is for demo only
++
++
++		jQuery("#jqGridDetails").jqGrid('setCaption', 'Mail List Rewriting::'+xselection);
++		//jQuery("#jqGridDetails").trigger("reloadGrid");	
++		
++		jQuery("#jqGridDetails").jqGrid('setGridParam',{url: "/mailmissing/"+xselection,datatype: 'json'}); // the last setting is for demo only
++		jQuery("#jqGridDetails").jqGrid('setCaption', 'Mail List Missing after Rewrite::'+xselection);
++		jQuery("#jqGridDetails").trigger("reloadGrid");	
++	
++	});
++});
+ 
+ 
+ </script>
+@@ -129,7 +162,10 @@ function clearSelection() {
+ 
+     <table id="mailinglists"><tr><td></td></tr></table> 
+     <div id="pager"></div> 
++		
+ 	<br>
++	<input type="BUTTON" id="bemailmissing" value="Show Emails Missing" /> 
++	<input type="BUTTON" id="bemailrewrite" value="re-write mailinglist" /> 
+ 	  
+         <table id="jqGridDetails"></table>
+         <div id="jqGridDetailsPager"></div>
+diff --git a/app/views/member/list.htm b/app/views/member/list.htm
+index 7272baa..1c53d95 100644
+--- a/app/views/member/list.htm
++++ b/app/views/member/list.htm
+@@ -79,7 +79,7 @@ else {myeditability=true; paideditability=false;hidemoney=false;}
+ 			  { name: "amtpaidthisyear", width: 80, align: "right",editable: paideditability,searchoptions : {sopt: ["ge","le"] },sorttype:'number',viewable: false,hidden: hidemoney },
+ 			  			 // { name: "feewhere", width: 80, align: "left",search:true,hidden: hidemoney , edittype:'select',editoptions:{value:"Treasurer:Treasurer;Inland:Inland"} ,searchoptions : {sopt: ["bw","eq"] },editable: myeditability, editrules: {edithidden:false}   },
+ 			 { name: "feewhere", width: 80, align: "left",search:true,hidden: hidemoney , edittype:'custom',editoptions:{custom_element: myelem, custom_value:myvalue} ,
+-			 searchoptions : {sopt: ["bw","eq"] },editable: myeditability, editrules: {edithidden:false,required:true}   },
++			 searchoptions : {sopt: ["bw","eq"] },editable: myeditability, editrules: {edithidden:false,required:false}   },
+ 			{ name:"",hidden:true},
+ 			{ name:"",hidden:true},
+ 			{ name:"",hidden:true},
+diff --git a/downloads/Financial_report_2015.xlsx b/downloads/Financial_report_2015.xlsx
+index c17f8a8..1cd0f32 100644
+Binary files a/downloads/Financial_report_2015.xlsx and b/downloads/Financial_report_2015.xlsx differ
+diff --git a/downloads/email_list_all.pdf b/downloads/email_list_all.pdf
+index 8295454..8d287ba 100644
+Binary files a/downloads/email_list_all.pdf and b/downloads/email_list_all.pdf differ
+diff --git a/downloads/email_list_at.pdf b/downloads/email_list_at.pdf
+index 98fbd43..bf70166 100644
+Binary files a/downloads/email_list_at.pdf and b/downloads/email_list_at.pdf differ
+diff --git a/downloads/email_list_gl.pdf b/downloads/email_list_gl.pdf
+index 95460d7..2fe5921 100644
+Binary files a/downloads/email_list_gl.pdf and b/downloads/email_list_gl.pdf differ
+diff --git a/downloads/email_list_joiners.pdf b/downloads/email_list_joiners.pdf
+new file mode 100644
+index 0000000..c53506d
+Binary files /dev/null and b/downloads/email_list_joiners.pdf differ
+diff --git a/downloads/email_list_weekly.pdf b/downloads/email_list_weekly.pdf
+index 2797d72..a9ab2c9 100644
+Binary files a/downloads/email_list_weekly.pdf and b/downloads/email_list_weekly.pdf differ
+diff --git a/flat.php b/flat.php
+new file mode 100644
+index 0000000..8cd22f2
+--- /dev/null
++++ b/flat.php
+@@ -0,0 +1,42 @@
++<?php
++/*function flatten($array) {
++    if (!is_array($array)) {
++        // nothing to do if it's not an array
++        return array($array);
++    }
++
++    $result = array();
++    foreach ($array as $value) {
++        // explode the sub-array, and add the parts
++        $result = array_merge($result, flatten($value));
++    }
++
++    return $result;
++}*/
++function array_2_csv($array) {
++$csv = array();
++foreach ($array as $item=>$val) {
++    if (is_array($val)) { 
++        $csv[] = $this->array_2_csv($val);
++        $csv[] = "\n";
++    } else {
++        $csv[] = "'".$val."'";
++    }
++}
++return implode(',', $csv);
++}
++$arr =array(  array ('mname' => 'Peter Saunders'),array ('mname' => 'Jennifer Saunders'));
++ $arr = array( 0 => '2307pas@gmail.com',
++  1 => 'annekinsella@hotmail.com',
++  2 => 'aseret1956@yahoo.de');
++var_export($arr);
++//var_export(flatten($arr));
++	$output = iterator_to_array(new RecursiveIteratorIterator(
++    new RecursiveArrayIterator($arr)), FALSE);
++var_export($output);
++
++$output = array_2_csv($arr);
++var_export($output);
++echo "\n";
++echo "(".$output.")";
++echo "\n";
+diff --git a/index.php b/index.php
+index d24098c..aec57f3 100644
+--- a/index.php
++++ b/index.php
+@@ -89,6 +89,8 @@ $f3->route('GET /getsubscribers','MpzController->getlist2');
+ $f3->route('GET /subscribertest','MpzController->subscribertest');
+ 
+ $f3->route('GET /weeklyxmail','ReportController->weeklyxmail');
++$f3->route('GET /weeklyreports/@reportset','ReportController->weeklyreports');
++
+ $f3->route('GET /financialxmail/@fyear',
+   function($f3,$args) {
+ 	$myexcel= new ReportController();
+@@ -112,6 +114,9 @@ $f3->route('POST /editmailinglist','AdminAjaxController->editmailinglist');
+ $f3->route('GET /mail_mime_test/@membnum', 'EmailController->mailto1joiner');
+ $f3->route('GET /mailmantest', 'EmailController->mailmantest');
+ $f3->route('GET /mailinglistdetail/@listnum', 'EmailController->mailinglistdetail');
+-
++$f3->route('GET /dailymailmancheck','EmailController->daily_mailman_check');
++$f3->route('GET /dailymailman','ReportController->	');
++$f3->route('GET /mailmissing/@listname', 'EmailController->mailmissing');
++$f3->route('GET /mailrewrite/@listname', 'EmailController->mailrewrite');
+ 
+ $f3->run();

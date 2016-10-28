@@ -1,0 +1,30 @@
+<div class="navbar">
+<!-- in user admin/nav.htm --> 
+    <div class="navbar-inner">
+        <ul class="nav">
+
+
+			<li class="active"><a href="{{ @BASE.'/members' }}"><i class="icon-plus-sign icon-black"></i>Back to Members</a></li>
+ <check if="{{ @page_role == 'admin' }}">
+			<!-- page role is admin -->
+          <true>
+		  	<div class="jumbotron">
+                <h1>Admin</h1>
+            </div>	
+<div class="navbar">
+			<div class="navbar-inner">
+			<ul class="nav">
+			<li class="active"> <a href="{{ @BASE.'/users' }}">Users</a></li>
+			<li class="active"> <a href="{{ @BASE.'/trail' }}">Audit Trail</a></li>
+            <li class="active"> <a href="{{ @BASE.'/options' }}">Option Settings</a></li>
+    
+		 	</ul>
+			</div>
+          
+		   </true>
+            </check>
+
+
+        </ul>
+    </div>
+</div>

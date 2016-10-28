@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <base href="{{ @BASE.'/'.@UI }}" />        
+        <title>{{ @site }}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <!-- Bootstrap -->
+		<!-- script src="../../ui/js/jquery-1.11.0.min.js" type="text/javascript"></script -->
+		<script src="../../ui/js/jquery-1.11.2.min.js" type="text/javascript"></script>
+        <link href="../../ui/css/bootstrap.min.css" rel="stylesheet" media="screen"  >
+		  <link href="../../ui/css/crud.css" rel="stylesheet" type="text/css" media="screen">		
+		  <link rel="stylesheet" type="text/css" media="screen" href="../../ui/css/trirand/ui.jqgrid.css">
+		  <link rel="stylesheet" type="text/css" media="screen" href="../../ui/css/jquery-ui.css">
+		  
+		  <!-- link rel="stylesheet" type="text/css" href="/minify/css?files=typo.css,grid.css" / -->
+		  
+		  <!-- script src= "http://code.jquery.com/ui/1.11.4/jquery-ui.min.js" type="text/javascript"></script -->
+		  <script src= "../../ui/js/jquery-ui.min.js" type="text/javascript"></script>
+		  <script src="../../ui/js/trirand/i18n/grid.locale-en.js" type="text/javascript"></script>
+		  <!-- script src="../../ui/js/trirand/jquery.jqGrid.min.js" type="text/javascript"></script -->
+		  <script src="../../ui/js/trirand/jquery.jqGrid.min.js" type="text/javascript"></script>
+		  <script src="../../ui/js/jquery.storageapi.min.js" type="text/javascript"></script>
+		  
+
+			<script src="../../ui/js/bootstrap.min.js"></script >
+	       
+			<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" /> 
+    </head>
+
+    <body>
+
+<!-- contents of attend views/header.htm -->
+        <div class="container">
+		
+           <check if ="{{ substr(@page_head,0,6) == 'Manage' }}">
+		   <true>
+		   <include href="admin/nav.htm" />
+		   </true>
+		   <false>
+				
+			  <include href="event/nav.htm" />
+			  
+		   </false>
+		   </false>
+		   </check>
+            <div class="jumbotron">
+                <h1>{{ @page_head }}</h1>
+            </div>
+
+
+
+            <check if="{{ @message }}">
+            <div class="alert alert-success">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <strong>{{ @message }}</strong>
+            </div>
+            </check>
+
+	

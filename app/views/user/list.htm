@@ -1,0 +1,62 @@
+<!-- user/list.htm  -->
+<script type="text/javascript">
+$(function () {
+    $("#list").jqGrid({ 
+        url: "/usergrid",
+			 editurl:"/edituser",
+        datatype: "xml",
+        mtype: "GET",
+        colNames: ["Username", "Email", "Role","Password"],//],
+        colModel: [
+           
+			{ name: "username", width: 120, editable: true },
+             {name: "email", width: 120, editable: true, edittype:"text"},
+			 { name: "role", width: 80,align: "right",editable: true ,
+			  edittype: "select",
+                         editoptions: {
+                             value: "admin:admin;editor:editor;user:user"    }}, 
+			{name: "password", width: 120, editable: true, },
+			 /**/
+			
+        ],
+        pager: "#pager",
+		onSelectRow: editRow,
+		width :700,
+        rowNum: 10,
+        rowList: [10, 20, 30],
+        sortname: "username",
+        sortorder: "asc",
+        viewrecords: true,
+        gridview: true,
+        autoencode: true,
+        caption: "User auto grid",
+		 height:'auto',
+		 altRows: true,
+		 footerrow : true,
+		 userDataOnFooter : false, 
+	
+    }); 
+	
+            var lastSelection;
+	        function editRow(id) {
+                if (id && id !== lastSelection) {
+                    var grid = $("#list");
+                    grid.jqGrid('restoreRow',lastSelection);
+                    grid.jqGrid('editRow',id, {keys:true, focusField: 4});
+                    lastSelection = id;
+                }
+            }
+
+
+ $('#list').navGrid('#pager',
+                { edit: false, add: true, del: true, search: false, refresh: true, view: false, position: "left", cloneToTop: false },
+				{
+                    closeAfterAdd: true,
+                    recreateForm: true,}
+					);
+	}			); 
+</script>
+ 
+
+    <table id="list"><tr><td></td></tr></table> 
+    <div id="pager"></div> 

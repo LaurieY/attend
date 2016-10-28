@@ -1,0 +1,18 @@
+***************
+*** 112,117 ****
+  $f3->route('GET /mail_mime_test/@membnum', 'EmailController->mailto1joiner');
+  $f3->route('GET /mailmantest', 'EmailController->mailmantest');
+  $f3->route('GET /mailinglistdetail/@listnum', 'EmailController->mailinglistdetail');
+- 
+  
+  $f3->run();
+--- 114,122 ----
+  $f3->route('GET /mail_mime_test/@membnum', 'EmailController->mailto1joiner');
+  $f3->route('GET /mailmantest', 'EmailController->mailmantest');
+  $f3->route('GET /mailinglistdetail/@listnum', 'EmailController->mailinglistdetail');
++ $f3->route('GET /dailymailmancheck','EmailController->daily_mailman_check');
++ $f3->route('GET /dailymailman','ReportController->	');
++ $f3->route('GET /mailmissing/@listname', 'EmailController->mailmissing');
++ $f3->route('GET /mailrewrite/@listname', 'EmailController->mailrewrite');
+  
+  $f3->run();

@@ -1,0 +1,11 @@
+# Enable rewrite engine and route requests to framework
+RewriteEngine On
+SetEnv TZ Europe/Madrid
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule .* index.php [L,QSA]
+#AddHandler application/x-httpd-php53 .php .php5 
+# Don't show directory listings for URLs which map to a directory.
+Options -Indexes
+

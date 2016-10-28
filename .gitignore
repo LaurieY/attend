@@ -1,0 +1,5 @@
+_lib/
+_ui/
+tmp/
+*.log
+*.phar

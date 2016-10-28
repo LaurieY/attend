@@ -1,0 +1,358 @@
+<script type="text/javascript">
+$(function () {
+// **************  functions for the custom elements in the add and edit forms for the feewhere element  **********
+function focusOther() {  $('input:radio[id=feewhere_other]').prop('checked', true);
+ }
+ window.focusOther = focusOther; //to allow testing from console
+function myelem (value, options) { 
+// var el = document.createElement("input");
+ // el.type="radio";
+ // el.value = value;
+ // return el;
+//}
+var treaschecked =" ";
+var preschecked= " ";
+var otherchecked =" ";
+var bankchecked = " ";
+switch(value) {
+	case 'Treasurer':
+	case '':
+	treaschecked ='checked';
+	otherchecked =" ";
+	break;
+	case 'President':
+	preschecked	='checked';
+	break;
+	case 'Bank':
+	bankchecked	='checked';
+	break;
+	default:
+	otherchecked ="checked";
+	break;
+	
+
+}
+/************
+if (value=='Treasurer'||value=='' ) {
+treaschecked ='checked';
+otherchecked =" ";
+}
+else if(value=='President'){
+	preschecked	='checked';}
+		else {
+otherchecked ='checked';}
+********/
+
+
+//********  get current value of feewhere , if not selected set to Treasurer, otherwise set to existng value
+
+//var elemStr = '<div><input id="'+options.id +'_treas" type="radio" size="10" name="fee" value="Treasurer" checked>Treasurer<br>'+
+var elemStr = '<div><input id="'+options.id +'_treas" type="radio" size="10" name="fee" value="Treasurer" '+treaschecked+'  >Treasurer<br>'+  // no default
+						'<input id="'+options.id +'_pres" type="radio" size="10" name="fee" value="President" '+preschecked+'  >President<br>'+
+						'<input id="'+options.id +'_bank" type="radio" size="10" name="fee" value="Bank" '+bankchecked+'  >Bank<br>'+
+						'<input id="'+options.id + '_other' +
+                        '" type="radio" size="20" name="fee" value="other" '+otherchecked +'> Other  '+
+						'<input id="'+options.id +'_text" type="text" size="20" name="feewhere" onfocus="focusOther()" value=	"'+value+'" ></div>';
+          // return DOM element from jQuery object
+          return $(elemStr)[0];
+		  }
+ 
+function myvalue(elem, operation, value) {
+    if(operation === 'get') {
+      // return $(elem).val();
+	  var fred=$('input[id*="amtpaid"]').val();
+	  var fred=$('input[id*="feewhere_text"]').val();
+	 if( $('input:radio[name="fee"]:checked').val() =='other') return  fred;
+		  else return $('input:radio[name="fee"]:checked').val();
+    } else if(operation === 'set') {
+       $('input',elem).val(value);
+    }
+}
+var myrole= $('#myrole').text();
+if (myrole == 'user') {myeditability=false;hidemoney=true;paideditability=false;
+$("#bedit").hide();$("#badd").hide();$("#bdelr").hide();$("#bdelnr").hide();
+}
+else {myeditability=true; paideditability=false;hidemoney=false;}
+
+
+    $("#list").jqGrid({ 
+        url: "/membergrid",
+		editurl:"/editmember",
+        datatype: "xml",
+		ignoreCase: true,
+        mtype: "GET",
+        colNames: ["Surname", "Forename", "Num.", "Phone","Mobile","Email","Type","Location","Paid","Amt Paid", " FeeWhere?","","","","Joined",],//],
+        colModel: [
+           
+			{ name: "surname", width: 120,editable: myeditability, edittype:"text",searchoptions : {
+                            // show search options
+                            sopt: ["bw","eq"] // ge = greater or equal to, le = less or equal to, eq = equal to  	
+							},editrules: { number: false, required: true}},
+             {name: "forename", width: 120,editable: myeditability, edittype:"text", editrules: { number: false, required: true}},
+			 { name: "membnum", width: 80,searchoptions : {sopt: ["eq"] }, searchrules:{integer:true},sorttype:'number'}, //  eq = equal to  	
+			{ name: "phone", width: 85, align: "right",editable: myeditability, edittype:"text" },
+            { name: "mobile", width: 85, align: "right",editable: myeditability, edittype:"text" }, 
+            { name: "email", width: 210, align: "right",editable: myeditability, edittype:"text" ,searchoptions : {sopt: ["cn"] },editrules: { email: true, required: false},}, 
+			{ name: "membtype", width: 90, align: "right",editable: myeditability,
+			edittype:'select',editoptions:{value:"M:Standard Member;MJL1:Member Joined Late (1st year);MJL2:Member Joined Late (2nd year);GL:Group Leader;GLS:Group Leader Spouse;AT:Admin Team;ATS:Admin Team Spouse;ATGL:Admin Team & Group Leader"},},
+             { name: "location", width: 65, align: "right" ,editable: myeditability,edittype:'select',editoptions:{value:"C:Coast;I:Inland"},},
+			 { name: "paidthisyear", width: 80, align: "right" ,editable: paideditability, edittype:'select',editoptions:{value:"Y:Paid;W:Will Pay;N:Not Paid"} }, 
+			  { name: "amtpaidthisyear", width: 80, align: "right",editable: paideditability,searchoptions : {sopt: ["ge","le"] },sorttype:'number',viewable: false,hidden: hidemoney },
+			  			 // { name: "feewhere", width: 80, align: "left",search:true,hidden: hidemoney , edittype:'select',editoptions:{value:"Treasurer:Treasurer;Inland:Inland"} ,searchoptions : {sopt: ["bw","eq"] },editable: myeditability, editrules: {edithidden:false}   },
+			 { name: "feewhere", width: 80, align: "left",search:true,hidden: hidemoney , edittype:'custom',editoptions:{custom_element: myelem, custom_value:myvalue} ,
+			 searchoptions : {sopt: ["bw","eq"] },editable: myeditability, editrules: {edithidden:false,required:false}   },
+			{ name:"",hidden:true},
+			{ name:"",hidden:true},
+			{ name:"",hidden:true},
+			{ name: "datejoined", width: 100, align: "right",search:false }, /**/
+			
+        ],
+			pager: "#pager",
+			page:1, //LEY
+
+			onSelectRow: editRow,
+			rowNum: 20, 
+			rowList: [10, 20, 30],
+			sortname: "membnum",
+			sortorder: "desc", 
+			viewrecords: true,
+			loadonce:true,  //LEY
+			gridview: true,
+			autoencode: true,
+			caption: "",
+			height:'auto',
+			altRows: false,
+			footerrow : true,
+			userDataOnFooter : true,
+			multiselect: false,
+			ajaxRowOptions: { async: true },
+			//cellEdit:true,
+			// multikey: "ctrlKey", 
+			loadComplete:function() {
+			//var count = $("#list").jqGrid('getGridParam','reccount');
+			var myrole= $('#myrole').text();
+			var count = $('#list').jqGrid('getGridParam','data').length;
+			if (count === 0&& myrole != 'user'){
+             var retval = confirm("Members list is Empty \n The rollover date has passed\nPerform Rollover action to new U3A Year ?");
+   			if( retval == true ){//alert("User wants to perform Rollover!");
+			var retval2 = confirm("Are you sure you want to perform the Rollover action to the new U3A Year?");
+				if (retval2==true) {
+				//perform rollover action 
+				window.location.href = "/rollover";
+				return true;
+				}
+				else{
+				}
+			return false;
+			}else{
+				alert("User does not want to Perform Rollover\n ");
+				return false;
+			}
+			}
+			},
+	 
+    }); 
+            var lastSelection;
+function editRow(id) { var grid = $("#list");
+                if (id && id !== lastSelection) {
+                   
+                    grid.jqGrid('restoreRow',lastSelection);
+                  //grid.jqGrid('editRow',id, {keys:true, focusField: 4}); 
+				 } 
+				 grid.jqGrid('FormToGrid', id,'#FormPost');
+				 grid.jqGrid('editRow',id, true,  '','','','',editreload); //rowid, keys, oneditfunc, successfunc, url, extraparam, aftersavefunc,errorfunc, afterrestorefunc
+                    lastSelection = id;
+					//$("#"+id+"_formattedvalue").focus();
+                
+            }
+			
+function editreload(rowid, result) {
+			//get response and update the local grid for those values that are computed i.e. amtpaidthisyear
+			$showit=$.parseJSON(result.responseText);
+			grid.jqGrid('setCell', rowid, 'amtpaidthisyear', $showit.amtpaidthisyear);
+			grid.jqGrid('setCell', rowid, 'paidthisyear', $showit.paidthisyear);
+		$curpg=$('#list').getGridParam('page'); // current page
+		//$("#list").trigger("reloadGrid", [{ page: $curpg}]); 
+		reloadpage($curpg);
+		}		
+function reload(rowid, result) {
+		$("#list").trigger("reloadGrid", [{ page: 1}]);
+		}
+function reloadpage(relpage) {
+		$("#list").trigger("reloadGrid", [{ page: relpage}]);
+		}
+$('#list').jqGrid('navGrid','#pager',
+		{ edit: false, add: false, del: false, search: false, refresh: true, view: false, position: "left", cloneToTop: false, },
+		{afterSubmit: function(response, postdata) { $("#list").trigger("reloadGrid");return true;},
+		//},		
+		 beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).hide(); }  // for edit
+		}, // use default settings for edit
+		{dataheight:'550px',beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).show();$('#tr_paidthisyear', form).show(); }}, // use default settings for add
+		{},  // refresh   //for delete
+		{closeAfterAdd: true, 
+                    recreateForm: true
+				   }, // enable the advanced searching
+		{closeOnEscape:true}
+	
+
+                  );
+		$('#list').jqGrid('filterToolbar',{searchOperators: true,	});
+			
+	
+ var grid = $("#list");
+
+
+		//***************  REFRESH BUTTON **********/
+$("#cm1").click( function() { //Refresh
+		var grid = $("#list");
+		//$('grid').jqGrid('clearGridData');
+		//$('grid').jqGrid('setGridParam', {data: dataToLoad});
+		//
+		  //var text = $("#searchText").val();
+    var postdata = grid.jqGrid('getGridParam', 'postData');
+    // build up the filter
+    // ['equal','not equal', 'less', 'less or equal','greater','greater or equal', 'begins with','does not begin with','is in','is not in','ends with','does not end with','contains','does not contain']
+    // ['eq','ne','lt','le','gt','ge','bw','bn','in','ni','ew','en','cn','nc']
+    var myfilter =  '{"groupOp":"AND","rules":[{"field":"paidthisyear","op":"ne","data":"\'A\'"}]}';         
+ 
+
+    $.extend(postdata, { filters: myfilter });
+    grid.jqGrid('setGridParam', { search: false, postData: postdata,datatype:'xml' });        
+    grid.trigger("reloadGrid", [{ page: 1,datatype:'xml'}]);
+	//$("#list").setGridParam({datatype:'json', page:1}).trigger('reloadGrid');
+	//$("grid").trigger("reloadGrid", [{ page: 1,datatype:'xml'}]);
+ 
+});
+
+
+	/**************  EDIT BUTTON ****/
+$("#bedit").click(function(){
+$( "#addeditdel" ).val( "" );
+	var gr = jQuery("#list").jqGrid('getGridParam','selrow');
+	if( gr != null ) jQuery("#list").jqGrid('editGridRow',gr,{dataheight:390,height:490,width:500,closeAfterEdit:true,beforeSubmit:beforeSubmitAdd,afterSubmit:afterFormEdit,reloadAfterSubmit:true,beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).hide(); }});
+	/**  hide amtpaid this year so that it doesn't get erroneously overwritten.  Can edit in inline mode */
+	else alert("Please Select Row");
+});	
+function afterFormEdit(response, postdata)  // Form edit doesn't allow amtpaid or paid status  to be changed
+ { 			$showit=$.parseJSON(response.responseText);
+			
+			var rowid = jQuery("#list").jqGrid('getGridParam','selrow');
+			grid.jqGrid('setRowData',rowid,$showit);
+			grid.jqGrid('setCell', postdata.id, 'amtpaidthisyear', $showit.amtpaidthisyear);// only works if reloadaftersubmit is true
+			/**** BUT that means all the other values will have to be put back into the grid */
+			$('#tr_amtpaidthisyear').value=$showit.amtpaidthisyear;
+	
+			$( "#addeditdel" ).val( "edit actioned" );
+			return [true];
+
+ } 	
+ /**************  ADD BUTTON ****/
+$("#badd").click(function(){
+var grid = $("#list");
+grid.jqGrid('setColProp','membtype', // remove MJL2 from otions available
+	{editoptions:{value:"M:Standard Member;MJL1:Member Joined Late (1st year);GL:Group Leader;GLS:Group Leader Spouse;AT:Admin Team;ATS:Admin Team Spouse;ATGL:Admin Team & Group Leader"}});
+
+$( "#addeditdel" ).val( "" );
+	jQuery("#list").jqGrid('editGridRow','new',{dataheight:360,height:460,width:500,closeAfterAdd:true,afterSubmit:afterFormAdd,
+						onclickSubmit: function (options,postData) {
+						return{paidthisyear:'Y'}},
+						//beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).hide();$('#tr_paidthisyear', form).show(); }
+						beforeShowForm: beforeShowAdd,
+						beforeSubmit:beforeSubmitAdd,
+		});
+});	
+function beforeShowAdd(form) {  
+$('#tr_amtpaidthisyear', form).hide();$('#tr_paidthisyear', form).show();
+var grid = $("#list");
+grid.jqGrid('setColProp','membtype',  //Reinstate MJL2 once form has been contructed, in case form cancelled
+	{editoptions:{value:"M:Standard Member;MJL1:Member Joined Late (1st year);MJL2:Member Joined Late (2nd year);GL:Group Leader;GLS:Group Leader Spouse;AT:Admin Team;ATS:Admin Team Spouse;ATGL:Admin Team & Group Leader"}});
+}
+function beforeSubmitAdd(postdata,formid) {
+var success=true;message='';
+if (postdata.feewhere=='' ) {success=false;message="'Other' field should not be blank\n Please Supply a name";}
+return[success,message]
+}
+function afterFormAdd(response, postdata) 
+ { var grid = $("#list");
+ 
+ 			//$showit=$.parseJSON(response.responseText);
+			//grid.jqGrid('setCell', postdata.id, 'amtpaidthisyear', $showit.amtpaidthisyear);
+if (response.statusText==="OK") {
+grid.jqGrid('setGridParam', { search: false, datatype:'xml' });  
+grid.trigger("reloadGrid", [{ page: 1,datatype:'xml'}]);
+$( "#addeditdel" ).val( "add actioned" );
+return [true];}
+else alert("Error on Add Member ");
+//return [success,message,new_id] 
+ }  
+ /**************  DELETE with Refund BUTTON ****/
+$("#bdelr").click(function(){
+$( "#addeditdel" ).val( "dr" );
+var grid = $("#list");
+var gr = grid.jqGrid('getGridParam','selrow');
+if( gr != null ){
+	grid.jqGrid('delGridRow',gr,{dataheight:100,height:200,width:500,onclickSubmit: function (options,postData) {
+						return{deltype:'withrefund'}},
+						afterSubmit:afterFormDel,beforeShowForm: function ($form) {
+ 	var delrow2=grid.jqGrid('getLocalRow',gr);
+	$("td.delmsg", $form[0]).html("Do you really want delete this row <br/>with <b>member number=" +
+         delrow2.membnum + " and surname=" +delrow2.surname  +"</b> ?");} 
+		 })}
+		
+		 else alert("Please Select Row");
+});
+$("#bdelnr").click(function(){
+$( "#addeditdel" ).val( "dnr" );
+var grid = $("#list");
+var gr = grid.jqGrid('getGridParam','selrow');
+if( gr != null ){
+	grid.jqGrid('delGridRow',gr,{dataheight:100,height:200,width:500,afterSubmit:afterFormDel,
+	onclickSubmit: function (options,postData) {
+						return{deltype:'norefund'}},
+						beforeShowForm: function ($form) {
+ 	var delrow2=grid.jqGrid('getLocalRow',gr);
+	$("td.delmsg", $form[0]).html("Do you really want delete this row <br/>with <b>member number=" +
+         delrow2.membnum + " and surname=" +delrow2.surname  +"</b> ?");} 
+		 })}
+		
+		 else alert("Please Select Row");
+});
+	//jQuery("#list").jqGrid('delGridRow',gr,{dataheight:100,height:200,width:500,closeAfterEdit:true,});
+	
+
+function afterFormDel(response, postdata) 
+ { var grid = $("#list");
+ 			//$showit=$.parseJSON(response.responseText);
+			//grid.jqGrid('setCell', postdata.id, 'amtpaidthisyear', $showit.amtpaidthisyear);
+if (response.statusText==="OK") {
+grid.jqGrid('setGridParam', { search: false, datatype:'xml' });  
+grid.trigger("reloadGrid", [{ page: 1,datatype:'xml'}]);
+$( "#addeditdel" ).val( "delete actioned" );
+return [true];}
+else alert("Error on Delete Entry ");
+return (false,'Error on Delete Entry' );
+ } 
+
+
+			
+		
+ 
+}); 
+
+
+</script>
+ 
+
+    <table id="list"><tr><td></td></tr></table> 
+    <div id="pager"></div> 
+	<br>
+	<input type="BUTTON" id="bedit" value="Edit Selected" /> &nbsp; &nbsp; &nbsp;<input type="BUTTON" id="badd" value="Add a Member" />&nbsp; &nbsp; &nbsp;<input type="BUTTON" id="bdelr" value="Remove with Refund" />&nbsp; &nbsp; &nbsp;<input type="BUTTON" id="bdelnr" value="Remove without Refund" />
+<br><br><br>
+	<a href="javascript:void(0)" id="cm1">Refresh with NO Filter</a>
+
+	<br>
+<!-- 	U3AYear = {{@SESSION.u3ayear}}
+ U3Astart month = {{@SESSION.u3astartmonth}} -->
+
+	<input type="hidden" id="addeditdel" value="a" />
+

@@ -1,0 +1,82 @@
+<script type="text/javascript">
+$(function () {
+  $("#feeslist").jqGrid({ 
+        url: "/feesgrid",
+		editurl:"/editfees",
+        datatype: "json",
+		ignoreCase: true,
+        mtype: "GET",
+        colNames: ["Member Type", "Recurring Fee", "First Year Fee", "Academic Year"],
+        colModel: [
+           
+			{ name: "membtype", width: 220,editable: true, edittype:"text",editrules: { number: false, required: true}},
+             {name: "feetopay", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+             {name: "firstyearfee", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+             {name: "acyear", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+			 
+		
+			
+        ],
+					pager: "#pager",
+			page:1, //LEY
+
+			onSelectRow: editRow,
+			rowNum: 10, 
+			rowList: [10, 20, 30],
+			sortname: "id",
+			sortorder: "asc", 
+			viewrecords: true,
+			loadonce:true,//true,  //LEY
+			gridview: true,
+			autoencode: true,
+			caption: "Fees Table",
+			height:'auto',
+			altRows: false,
+			footerrow : false,
+			userDataOnFooter : false,
+			multiselect: false,
+			ajaxRowOptions: { async: true },
+			//cellEdit:true,
+			// multikey: "ctrlKey", 
+	
+	 
+    }); 
+            var lastSelection;
+function editRow(id) { var grid = $("fees#list");
+                if (id && id !== lastSelection) {
+                   
+                    grid.jqGrid('restoreRow',lastSelection);
+                  //grid.jqGrid('editRow',id, {keys:true, focusField: 4}); 
+				 } 
+				 grid.jqGrid('FormToGrid', id,'#FormPost');
+				 grid.jqGrid('editRow',id, true,  {height:280,reloadAfterSubmit:true,closeAfterAddL:true,closeAfterEdit:true,closeOnEscape:true},'','','');//,editreload); //rowid, keys, oneditfunc, successfunc, url, extraparam, aftersavefunc,errorfunc, afterrestorefunc
+                    lastSelection = id;
+					//$("#"+id+"_formattedvalue").focus();
+                
+            }
+$('#feeslist').jqGrid('navGrid','#pager',
+		{ edit: true, add: true, del: true, search: false, refresh: true, view: false, position: "left", cloneToTop: false, },
+		{afterSubmit: function(response, postdata) { $("#feeslist").trigger("reloadGrid");return true;},
+		//},		
+		 beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).hide(); }  // for edit
+		}, // use default settings for edit
+		{dataheight:'350px',beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).show();$('#tr_paidthisyear', form).show(); }}, // use default settings for add
+		{},  // refresh   //for delete
+		{closeAfterAdd: true, 
+                    recreateForm: true
+				   }, // enable the advanced searching
+		{closeOnEscape:true}
+	
+
+                  );
+		//$('#feeslist').jqGrid('filterToolbar',{searchOperators: true,	});
+			
+
+});
+
+</script>
+ 
+
+    <table id="feeslist"><tr><td></td></tr></table> 
+    <div id="pager"></div> 
+	<br>

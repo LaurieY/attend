@@ -1,0 +1,491 @@
+diff --git a/add_feewhere.sql b/add_feewhere.sql
+new file mode 100755
+index 0000000..df09578
+--- /dev/null
++++ b/add_feewhere.sql
+@@ -0,0 +1,2 @@
++ALTER TABLE  `members` ADD  `feeewhere` VARCHAR( 32 ) NOT NULL DEFAULT  'Treasurer' AFTER  `datepaid`
++ALTER TABLE  `trail` ADD  `feeewhere` VARCHAR( 32 )  NULL AFTER  `datepaid`
+\ No newline at end of file
+diff --git a/app/controllers/AdminController.php b/app/controllers/AdminController.php
+index a0950f0..9fc1d2e 100644
+--- a/app/controllers/AdminController.php
++++ b/app/controllers/AdminController.php
+@@ -6,6 +6,7 @@ class AdminController extends Controller {
+ 	$f3=$this->f3;
+ 		$auth_logger = new Log('auth.log');
+ 	$auth_logger->write( "AdminController beforeroute  Session user_id = ".$f3->get('SESSION.user_id')); 
++	$auth_logger->write( "AdminController beforeroute  URI= ".$f3->get('URI'  ));
+ 	if ((!$f3->get('SESSION.user_id')) ||($f3->get('SESSION.user_role')!='admin')||( $f3->get('SESSION.lastseen')+($f3->get('admin_expiry')*3600)>time()))
+ 			{$f3->set('message','Cookies must be enabled to enter this area and user must have admin access');
+ 			$this->nocookie();
+diff --git a/app/controllers/LoginController.php b/app/controllers/LoginController.php
+new file mode 100755
+index 0000000..9f2b685
+--- /dev/null
++++ b/app/controllers/LoginController.php
+@@ -0,0 +1,173 @@
++<?php
++class LoginController extends Controller {
++function startup() {
++	$f3=$this->f3;
++	 $f3->set('message','');
++	$login_logger = new Log('login.log');
++	$login_logger->write( 'Entering LoginController startup URI= '.$f3->get('URI'  ) );
++	if (!$f3->exists('COOKIE.PHPSESSID')){
++	$login_logger->write( 'In LoginController No COOKIE.PHPSESSID ');
++	}
++	$f3->reroute('/login');
++}
++function auth() {
++	$f3=$this->f3;
++	$f3->clear('message');
++	
++//$f3->set('page_head','Login');
++		$auth_logger = new Log('auth.log');
++		$auth_logger->write( 'In auth ');
++		//if (!$f3->get('COOKIE.sent'))
++		if (!$f3->get('COOKIE.PHPSESSID'))
++			{$f3->set('message','Cookies must be enabled to enter this area');
++			$auth_logger->write( 'In auth Cookies must be enabled to enter this area');
++			$auth_logger->write( ' COOKIE contents = '.var_export($f3->get('COOKIE'), true));
++			$auth_logger->write( ' SESSION contents = '.var_export($f3->get('SESSION'), true));
++		//	echo var_export($f3->get('COOKIE'),true);
++			//echo var_export($f3->get('SESSION'), true);
++			$f3->reroute('/nocookie');
++			}
++		else {/***********
++	****/
++	$auth_logger->write( 'In auth Cookies ARE enabled');
++			$auth_logger->write( ' COOKIE contents = '.var_export($f3->get('COOKIE'), true));
++			$auth_logger->write( ' SESSION contents = '.var_export($f3->get('SESSION'), true));
++	$thisuserid= $f3->get('POST.user_id');
++	$thispassword = $f3->get('SESSION.password') ;
++		if ($this->checkpwd($thisuserid,$thispassword) ){$f3->reroute('/members');
++		
++		}
++		else 
++		$this->login($f3); 
++		//$f3->reroute('/login');
++		}
++	}	
++ function checkpwd($thisuserid,$thispassword) { 
++	$f3=$this->f3;
++	$auth_logger = new Log('auth.log');
++			$memuser = new DB\SQL\Mapper($this->db, 'mem_users'); 
++			
++		//$thisuser=$memuser->load(array('username =:user',array(':user'=> $f3->get('POST.user_id')) ) );
++			$thisuser=$memuser->load(array('username =:user',array(':user'=> $thisuserid)));
++			//$auth_logger->write( 'the posted password = '.$f3->get('SESSION.password'))	;
++			$auth_logger->write( 'checkpwd the posted userid/name = '.$thisuserid);
++			//$auth_logger->write( 'the posted username = '.$thisuser);
++			$auth_logger->write( 'the posted password = '.$thispassword);
++			if($memuser->loaded() ){
++			$auth_logger->write( 'thisusers loaded count = '.$memuser->loaded())	;
++			$auth_logger->write( 'thisuser = '.$thisuser->username)	;
++			}
++			else 
++			return false;
++			$pwdcrypt=$thisuser->password;
++			$auth_logger->write( 'this encrypted password = '.$pwdcrypt)	;
++			
++			$captcha=$f3->get('SESSION.captcha');
++			if ($captcha && strtoupper($f3->get('POST.captcha'))!=$captcha)
++				{$f3->set('message','Invalid CAPTCHA code');
++				return false;}
++			elseif ($pwdcrypt!=crypt($f3->get('POST.password'),$pwdcrypt))/*****check Posted  the database ***/
++				{$auth_logger->write( 'encrypted password NOT equal to POST.password which was = '.$f3->get('POST.password'))	;
++	/*****		$f3->get('POST.user_id')!=$f3->get('user_id') ||
++				crypt($f3->get('POST.password'),$crypt)!=$crypt)********/
++				$f3->set('message','Invalid user ID or password');
++				return false;}
++			else {$auth_logger->write( 'encrypted password IS equal to POST.password which was = '.$f3->get('POST.password'))	;
++				//$f3->clear('COOKIE.sent');
++				
++				
++				$f3->clear('SESSION.captcha');
++				$f3->set('SESSION.user_id',$f3->get('POST.user_id'));
++				$f3->set('SESSION.crypt',$pwdcrypt);
++				$f3->set('SESSION.user_role',$thisuser->role);
++				$f3->set('SESSION.lastseen',time());
++			
++				
++				$auth_logger->write( 'Exiting checkpwd SESSION.user_id= '.$f3->get('SESSION.user_id'  ) );
++				$auth_logger->write( 'Exiting checkpwd SESSION.user_role= '.$f3->get('SESSION.user_role'  ) );
++				$auth_logger->write( 'Exiting checkpwd SESSION.lastseen= '.$f3->get('SESSION.lastseen'  ) );
++				return true;
++			}
++		
++	return true;
++		}
++
++public function login() {
++	$f3=$this->f3;
++		$login_logger = new Log('login.log');
++		//$login_logger->erase();
++	$login_logger->write( 'Entering login'  );
++/*	$login_logger->write( 'Root = '.$f3->get('ROOT')   );
++	$login_logger->write( 'Base = '.$f3->get('BASE')   );
++	$login_logger->write( 'Ui = '.$f3->get('PATH')   );
++	$login_logger->write( 'Path = '.$f3->get('UI')   );
++	$login_logger->write( 'Logs = '.$f3->get('LOGS')   ); */
++	//$mysession = http_build_query($f3->get('SESSION'));
++	//$f3->dump($mysession   );
++		//$f3->clear('SESSION');
++		if ($f3->get('eurocookie')) {
++		$login_logger->write( 'IN login IN Eurocookie'  );
++		/*	$loc=Web\Geo::instance()->location(); // innecessary because we ARE in the EU
++			$f3->set('message','Cookies Set');
++			if (isset($loc['continent_code']) && $loc['continent_code']=='EU')
++			*/
++				
++			$f3->set('message',
++					'The administrator pages of this Web site uses cookies '.
++					'for identification and security. Without these '.
++					'cookies, these pages would simply be inaccessible. By '.
++					'using these pages you agree to this safety measure.');
++$login_logger->write( 'In login in continent==EU'  );
++		}
++		F3::set('FONTS','ui/fonts/');
++	/*	$fontdir=http_build_query(scandir('ui'));
++		$login_logger->write( 'Fonts = '.$f3->get('FONTS')   )	;
++		$login_logger->write( 'UI dir contains= '.$fontdir   )	;
++		$login_logger->write( 'Session.captcha = '.get_class($f3-> get( 'SESSION.captcha' )))	;
++		$login_logger->write( 'Session.captcha = '.$f3-> get( 'SESSION.captcha' ))	;
++		****/
++		
++		//$f3->set('COOKIE.sent',TRUE);
++		$img = new Image();
++		//$fred=$img->captcha('ui/fonts/thunder.ttf',16,5);
++		$login_logger->write( 'message contains= '.$f3->get('message'))	;
++		if ($f3->get('message')) {
++			$img=new Image;
++			// $finfo = finfo_open(FILEINFO_MIME_TYPE);
++			//$finfofile=  finfo_file($finfo, 'ui/fonts/thunder.ttf') ;
++		/*	$login_logger->write( 'file details = '.$finfofile)	;
++			$capt = $img->captcha('ui/fonts/thunder.ttf',18,5,'SESSION.captcha');
++			$login_logger->write( 'image class is = '.get_class($img   ))	;
++			$login_logger->write( 'captcha contains= '.get_class($capt   ))	;
++			***/
++			$f3->set('captcha',$f3->base64(
++				$img->captcha('ui/fonts/thunder.ttf',18,5,'SESSION.captcha')->
++					dump(),'image/png'));
++		}
++		//$mysession = http_build_query($f3->get('SESSION'));
++		//$f3->dump($mysession   );
++	$login_logger->write( 'In  login setting page_head'  );
++	if ($f3->get('COOKIE.PHPSESSID'))
++	$login_logger->write( ' COOKIE PHPSESSID exists contents = '.var_export($f3->get('COOKIE'), true));
++	else {
++	$login_logger->write( ' COOKIE PHPSESSID NOT exists contents = '.var_export($f3->get('COOKIE'), true));
++			$this->f3->reroute('/nocookie');}
++			$f3->set('page_head','Login');
++		$f3->set('page_role','');
++		$f3->set('view','member/login.htm');
++		$f3->set('SESSION.lastseen',time()); 
++
++	}
++	
++
++	//! Terminate session
++function logout() {
++	//$f3=$this->f3;
++		$this->f3->clear('SESSION');
++		
++		$this->f3->reroute('/login');
++
++	}		
++	
++
++}
+\ No newline at end of file
+diff --git a/app/controllers/MemberController.php b/app/controllers/MemberController.php
+index 55e6f1c..3c0b64b 100644
+--- a/app/controllers/MemberController.php
++++ b/app/controllers/MemberController.php
+@@ -6,10 +6,11 @@ class MemberController extends Controller {
+ 	 $f3->set('message','');
+ 	$auth_logger = new Log('auth.log');
+ 	$auth_logger->write( 'Entering MemberController beforeroute URI= '.$f3->get('URI'  ) );
++	
+ 	if (!$f3->get('COOKIE.PHPSESSID')){
+ 			$f3->set('message','Cookies must be enabled to enter this area');
+-			$auth_logger->write( ' COOKIE PHPSESSID NOT exists contents = '.var_export($f3->get('COOKIE'), true));
+-			$f3->reroute('/nocookie');
++			$auth_logger->write( ' COOKIE PHPSESSID NOT set contents = '.var_export($f3->get('COOKIE'), true));
++			$f3->reroute('/');
+ 			}
+ 	
+ 	if($f3->get('SESSION.user_id')){$auth_logger->write( "Session user_id = ".$f3->get('SESSION.user_id')); 
+@@ -31,7 +32,8 @@ class MemberController extends Controller {
+ 	$relogincondition= true;
+ 	$relogincondition = (!$f3->get('SESSION.user_id'))||( $f3->get('SESSION.lastseen')+($f3->get('user_expiry')*($f3->get('user_expiry_mult')))<time());
+ 	$auth_logger->write( 'beforeroute with relogincondition a ='.$relogincondition);
+-	if ((!($f3->get('URI')=='/login' )&&!($f3->get('URI')=='/logout' ))&&$relogincondition      ) 
++	//if ((!($f3->get('URI')=='/login' )&&!($f3->get('URI')=='/logout' ))&&$relogincondition      ) 
++	if ($relogincondition)
+ 	// not login or logout and not a session user_id already then need to force a login
+ 	{$auth_logger->write( 'Exiting beforeroute with relogincondition ='.$relogincondition);
+ 	$auth_logger->write( 'Exiting beforeroute with reroute to login');	 
+@@ -41,87 +43,23 @@ class MemberController extends Controller {
+ 	$auth_logger->write( 'Exiting beforeroute page_head set to = '.$f3->get('page_head'  ));
+ //debug_backtrace();	
+ }
+- function auth() {
+-	$f3=$this->f3;
+-	$f3->clear('message');
++function check_cookie()
++{$auth_logger = new Log('auth.log');
++$f3=$this->f3;
++	$auth_logger->write( 'Entering check_cookie URI= '.$f3->get('URI'  ) );
+ 	
+-//$f3->set('page_head','Login');
+-		$auth_logger = new Log('auth.log');
+-		$auth_logger->write( 'In auth ');
+-		//if (!$f3->get('COOKIE.sent'))
+-		if (!$f3->get('COOKIE.PHPSESSID'))
+-			{$f3->set('message','Cookies must be enabled to enter this area');
+-			$auth_logger->write( 'In auth Cookies must be enabled to enter this area');
+-			$auth_logger->write( ' COOKIE contents = '.var_export($f3->get('COOKIE'), true));
+-			$auth_logger->write( ' SESSION contents = '.var_export($f3->get('SESSION'), true));
+-		//	echo var_export($f3->get('COOKIE'),true);
+-			//echo var_export($f3->get('SESSION'), true);
+-			$f3->reroute('/nocookie');
+-			}
+-		else {/***********
+-	****/
+-	$auth_logger->write( 'In auth Cookies ARE enabled');
+-			$auth_logger->write( ' COOKIE contents = '.var_export($f3->get('COOKIE'), true));
+-			$auth_logger->write( ' SESSION contents = '.var_export($f3->get('SESSION'), true));
+-	$thisuserid= $f3->get('POST.user_id');
+-	$thispassword = $f3->get('SESSION.password') ;
+-		if ($this->checkpwd($thisuserid,$thispassword) ){$f3->reroute('/members');
+-		
+-		}
+-		else 
+-		$this->login($f3); 
+-		//$f3->reroute('/login');
+-		}
+-	}	
+-function checkpwd($thisuserid,$thispassword) { 
+-	$f3=$this->f3;
+-	$auth_logger = new Log('auth.log');
+-			$memuser = new DB\SQL\Mapper($this->db, 'mem_users'); 
+-			
+-		//$thisuser=$memuser->load(array('username =:user',array(':user'=> $f3->get('POST.user_id')) ) );
+-			$thisuser=$memuser->load(array('username =:user',array(':user'=> $thisuserid)));
+-			//$auth_logger->write( 'the posted password = '.$f3->get('SESSION.password'))	;
+-			$auth_logger->write( 'checkpwd the posted userid/name = '.$thisuserid);
+-			//$auth_logger->write( 'the posted username = '.$thisuser);
+-			$auth_logger->write( 'the posted password = '.$thispassword);
+-			if($memuser->loaded() ){
+-			$auth_logger->write( 'thisusers loaded count = '.$memuser->loaded())	;
+-			$auth_logger->write( 'thisuser = '.$thisuser->username)	;
+-			}
+-			else 
+-			return false;
+-			$pwdcrypt=$thisuser->password;
+-			$auth_logger->write( 'this encrypted password = '.$pwdcrypt)	;
+-			
+-			$captcha=$f3->get('SESSION.captcha');
+-			if ($captcha && strtoupper($f3->get('POST.captcha'))!=$captcha)
+-				{$f3->set('message','Invalid CAPTCHA code');
+-				return false;}
+-			elseif ($pwdcrypt!=crypt($f3->get('POST.password'),$pwdcrypt))/*****check Posted  the database ***/
+-				{$auth_logger->write( 'encrypted password NOT equal to POST.password which was = '.$f3->get('POST.password'))	;
+-	/*****		$f3->get('POST.user_id')!=$f3->get('user_id') ||
+-				crypt($f3->get('POST.password'),$crypt)!=$crypt)********/
+-				$f3->set('message','Invalid user ID or password');
+-				return false;}
+-			else {$auth_logger->write( 'encrypted password IS equal to POST.password which was = '.$f3->get('POST.password'))	;
+-				//$f3->clear('COOKIE.sent');
+-				
+-				
+-				$f3->clear('SESSION.captcha');
+-				$f3->set('SESSION.user_id',$f3->get('POST.user_id'));
+-				$f3->set('SESSION.crypt',$pwdcrypt);
+-				$f3->set('SESSION.user_role',$thisuser->role);
+-				$f3->set('SESSION.lastseen',time());
+-			
+-				
+-				$auth_logger->write( 'Exiting checkpwd SESSION.user_id= '.$f3->get('SESSION.user_id'  ) );
+-				$auth_logger->write( 'Exiting checkpwd SESSION.user_role= '.$f3->get('SESSION.user_role'  ) );
+-				$auth_logger->write( 'Exiting checkpwd SESSION.lastseen= '.$f3->get('SESSION.lastseen'  ) );
+-				return true;
+-			}
+-		
+-	return true;
+-		}
++    setcookie('COOK_CHK', uniqid(), time()+60);
++    if(!isset($_COOKIE['COOK_CHK']))
++    {$auth_logger->write( 'check_cookie !isset' );
++        header('Location: ' . $_SERVER['PHP_SELF']);
++    }
++    else
++    {$auth_logger->write( 'check_cookie isset inner' );
++        return TRUE;
++    }
++$auth_logger->write( 'check_cookie isset outer' );
++    return TRUE;
++}
+ /**public function sessionly ()
+ { $this->f3->set('page_head','Session info');
+ 
+@@ -166,81 +104,7 @@ function exports(){
+ 	}
+ 
+ 
+-public function login() {
+-	$f3=$this->f3;
+-		$login_logger = new Log('login.log');
+-		//$login_logger->erase();
+-	$login_logger->write( 'Entering login'  );
+-/*	$login_logger->write( 'Root = '.$f3->get('ROOT')   );
+-	$login_logger->write( 'Base = '.$f3->get('BASE')   );
+-	$login_logger->write( 'Ui = '.$f3->get('PATH')   );
+-	$login_logger->write( 'Path = '.$f3->get('UI')   );
+-	$login_logger->write( 'Logs = '.$f3->get('LOGS')   ); */
+-	//$mysession = http_build_query($f3->get('SESSION'));
+-	//$f3->dump($mysession   );
+-		$f3->clear('SESSION');
+-		if ($f3->get('eurocookie')) {
+-		$login_logger->write( 'IN login IN Eurocookie'  );
+-		/*	$loc=Web\Geo::instance()->location(); // innecessary because we ARE in the EU
+-			$f3->set('message','Cookies Set');
+-			if (isset($loc['continent_code']) && $loc['continent_code']=='EU')
+-			*/
+-				
+-			$f3->set('message',
+-					'The administrator pages of this Web site uses cookies '.
+-					'for identification and security. Without these '.
+-					'cookies, these pages would simply be inaccessible. By '.
+-					'using these pages you agree to this safety measure.');
+-$login_logger->write( 'In login in continent==EU'  );
+-		}
+-		F3::set('FONTS','ui/fonts/');
+-	/*	$fontdir=http_build_query(scandir('ui'));
+-		$login_logger->write( 'Fonts = '.$f3->get('FONTS')   )	;
+-		$login_logger->write( 'UI dir contains= '.$fontdir   )	;
+-		$login_logger->write( 'Session.captcha = '.get_class($f3-> get( 'SESSION.captcha' )))	;
+-		$login_logger->write( 'Session.captcha = '.$f3-> get( 'SESSION.captcha' ))	;
+-		****/
+-		
+-		//$f3->set('COOKIE.sent',TRUE);
+-		$img = new Image();
+-		//$fred=$img->captcha('ui/fonts/thunder.ttf',16,5);
+-		$login_logger->write( 'message contains= '.$f3->get('message'))	;
+-		if ($f3->get('message')) {
+-			$img=new Image;
+-			// $finfo = finfo_open(FILEINFO_MIME_TYPE);
+-			//$finfofile=  finfo_file($finfo, 'ui/fonts/thunder.ttf') ;
+-		/*	$login_logger->write( 'file details = '.$finfofile)	;
+-			$capt = $img->captcha('ui/fonts/thunder.ttf',18,5,'SESSION.captcha');
+-			$login_logger->write( 'image class is = '.get_class($img   ))	;
+-			$login_logger->write( 'captcha contains= '.get_class($capt   ))	;
+-			***/
+-			$f3->set('captcha',$f3->base64(
+-				$img->captcha('ui/fonts/thunder.ttf',18,5,'SESSION.captcha')->
+-					dump(),'image/png'));
+-		}
+-		//$mysession = http_build_query($f3->get('SESSION'));
+-		//$f3->dump($mysession   );
+-	$login_logger->write( 'In  login setting page_head'  );
+-	if ($f3->get('COOKIE.PHPSESSID'))
+-	$login_logger->write( ' COOKIE PHPSESSID exists contents = '.var_export($f3->get('COOKIE'), true));
+-	else
+-	$login_logger->write( ' COOKIE PHPSESSID NOT exists contents = '.var_export($f3->get('COOKIE'), true));
+-		$f3->set('page_head','Login');
+-		$f3->set('page_role','');
+-		$f3->set('view','member/login.htm');
+-		$f3->set('SESSION.lastseen',time()); 
+-	}
+-	
+-
+-	//! Terminate session
+-function logout() {
+-	//$f3=$this->f3;
+-		$this->f3->clear('SESSION');
+-		
+-		$this->f3->reroute('/login');
+ 
+-	}		
+-	
+ public function payments ()
+ 		{
+ 	$f3=$this->f3;
+diff --git a/app/controllers/UserController.php b/app/controllers/UserController.php
+index 647ba89..c869e3e 100644
+--- a/app/controllers/UserController.php
++++ b/app/controllers/UserController.php
+@@ -40,7 +40,7 @@ public function changeme()
+ 		$admin_logger->write('in User changeme new pwdcrypt '.$pwdcrypt);
+ 		$user->password= $pwdcrypt;
+ 		$user->update();
+-		$f3->reroute('/');
++		$f3->reroute('/members');
+ 				}
+ 		else {
+ 		$admin_logger->write('in User changeme after checkpwd failed');
+@@ -53,7 +53,7 @@ public function changeme()
+ 		//$user->getById();
+ 		$user->email= $f3->get('POST.newEmail');
+ 		$user->update();
+-		$f3->reroute('/');
++		$f3->reroute('/members');
+ 		}
+ 		$admin_logger->write('in User changeme not POST user_id = '.$f3->get('SESSION.user_id'));
+         $f3->set('view','admin/changeme.htm'); 
+diff --git a/app/views/admin/trail.htm b/app/views/admin/trail.htm
+index 31c8540..233980a 100644
+--- a/app/views/admin/trail.htm
++++ b/app/views/admin/trail.htm
+@@ -6,15 +6,15 @@ $(function () {
+ 			// editurl:"/edituser",
+         datatype: "xml",
+         mtype: "GET",
+-       colNames: ["Surname", "Forename", "Num.", "Phone","Mobile","Email","Type","Location","Paid","Amt Paid","Joined","Paid","Changed","By Whom","Change"],//],
++       colNames: ["Surname", "Forename", "Num.", "Phone","Mobile","Email","Type","Location","Paid","Amt Paid","Joined","Paid","Fee Where?","Changed","By Whom","Change"],//],
+         colModel: [
+            
+-			{ name: "surname", width: 120,editable: false, edittype:"text",searchoptions : {
++			{ name: "surname", width: 110,editable: false, edittype:"text",searchoptions : {
+                             // show search options
+                             sopt: ["bw","eq"] // ge = greater or equal to, le = less or equal to, eq = equal to  							
+ 						}},
+-             {name: "forename", width: 120,editable: false, },
+-			 { name: "membnum", width: 80,searchoptions : {sopt: ["eq"] }, searchrules:{integer:true},sorttype:'number'}, //  eq = equal to  	
++             {name: "forename", width: 110,editable: false, },
++			 { name: "membnum", width: 60,searchoptions : {sopt: ["eq"] }, searchrules:{integer:true},sorttype:'number'}, //  eq = equal to  	
+ 			{ name: "phone", width: 85, align: "right",editable: false,},
+             { name: "mobile", width: 85, align: "right",editable: false,  }, 
+             { name: "email", width: 210, align: "right",editable: false,searchoptions : {sopt: ["cn"] },editrules: { email: true, required: false},}, 
+@@ -24,8 +24,9 @@ $(function () {
+ 			  { name: "amtpaidthisyear", width: 50, align: "right",editable: false,},
+ 			  { name: "datejoined", width: 100, align: "right",search:false },    
+ 			  { name: "datepaid", width: 100, align: "right",search:false },   
++			  { name: "feewhere", width: 100, align: "right",search:false },   
+ 			  { name: "created_at", width: 150, align: "right",search:true }, 
+-			  { name: "editor", width: 120, align: "right",search:true, searchoptions : {sopt: ["bw"] },searchrules:{string:true}}, 
++			  { name: "editor", width: 80, align: "right",search:true, searchoptions : {sopt: ["bw"] },searchrules:{string:true}}, 
+ 			  { name: "change", width: 80, align: "right",search:false }, 
+ 			  
+ 			
+diff --git a/index.php b/index.php
+index 11b5891..ee594be 100644
+--- a/index.php
++++ b/index.php
+@@ -24,10 +24,10 @@ $f3->route('GET /subscribe1','EmailController->subscribe1');
+ $f3->route('GET /subscribe2','EmailController->subscribe2'); 
+ $f3->route('GET /batchsubscribe2','EmailController->batch_subscribe2'); 
+ 
+-$f3->route('GET /','MemberController->login');
+-$f3->route('GET /login','MemberController->login');
+-$f3->route('GET /logout','MemberController->logout');
+-$f3->route('POST /login','MemberController->auth');
++$f3->route('GET /','LoginController->startup');
++$f3->route('GET /login','LoginController->login');
++$f3->route('GET /logout','LoginController->logout');
++$f3->route('POST /login','LoginController->auth');
+ $f3->route('GET /admin','AdminController->index'); // not currently used
+ 
+ $f3->route('GET /trail','MemberController->trail');

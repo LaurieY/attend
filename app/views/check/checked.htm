@@ -1,0 +1,45 @@
+<script type="text/javascript">
+$(function () {
+$("#goback").click(function(){
+
+}); 
+}); 
+</script>
+
+<!-- <h3 style ="text-decoration: underline;"> Entries with with missing Membership Number in sheet and no match for name</h3> 
+ <repeat group="{{ @missings4 }}" value="{{ @missing }}">
+   <h5>{{@missing|raw }}</h5>
+</repeat>  -->
+<h3 style ="text-decoration: underline;"> Entries in spreadsheet with Invalid Membership Number </h3>
+ <repeat group="{{ @missings1 }}" value="{{ @missing }}">
+   <h5>{{@missing|raw }}</h5>
+</repeat> 
+
+<h3 style ="text-decoration: underline;"> Entries in spreadsheet with no matched name or number in the Database</h3> 
+ <repeat group="{{ @missings5 }}" value="{{ @missing }}">
+   <h5>{{@missing|raw }}</h5>
+</repeat> 
+<h3 style ="text-decoration: underline;"> Entries in spreadsheet with Member Names Not in database</h3> 
+ <repeat group="{{ @missings3 }}" value="{{ @missing }}">
+   <h5>{{@missing|raw }}</h5>
+</repeat> 
+<h3 style ="text-decoration: underline;"> Entries in spreadsheet with Number in Database but NOT paid</h3> 
+ <repeat group="{{ @missings2 }}" value="{{ @missing }}">
+   <h5>{{@missing|raw }}</h5>
+</repeat> 
+<h3 style ="text-decoration: underline;"> Entries in spreadsheet with matched name but not number in Database and NOT PAID </h2> 
+ <repeat group="{{ @missings6 }}" value="{{ @missing }}">
+   <h5>{{@missing|raw }}</h5>
+</repeat> 
+<div class="navbar">
+<!-- in member nav.htm -->
+    <div class="navbar-inner">
+        <ul class="nav">
+          
+            <!-- check if="{{ 0 === strpos(@page_head, 'Member List')||@page_head == 'Update Payments'}} " --> 
+			<check if="{{ @page_head != 'Login'}} "> 
+			<true>
+			<li class="active" ><a href="{{ @BASE.'/check' }}"> Try Another Sheet</a></li>
+			</ul>
+    </div>
+    </div>

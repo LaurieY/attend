@@ -1,0 +1,138 @@
+body {
+			padding-top:12px; /*  was 20 */
+			padding-bottom: 60px;
+		  }
+
+		  /* Custom container */
+		  .container {
+			margin: 0 auto;
+			max-width: 1200px;
+		  }
+		  .container > hr {
+			margin: 60px 0;
+		  }
+		  
+ h1 {
+  margin-top: 2px;
+  margin-bottom: 1px;
+}
+
+		  /* Main marketing message and sign up button */
+		  .jumbotron {
+			margin: 1px 0; /* was 10 */
+			text-align: center;
+			padding: 1px 0; /* was 4 */
+		}
+		  .jumbotron h1 {
+			font-size: 25px;
+			line-height: 1;
+		  }
+		  .jumbotron .lead {
+			font-size: 24px; 
+			line-height: 1.25;
+		  }
+		  .jumbotron .btn {
+			font-size: 21px;
+			padding: 14px 24px;
+		  }
+
+		  /* Supporting marketing content */
+		  .marketing {
+			margin: 60px 0;
+		  }
+		  .marketing p + h4 {
+			margin-top: 28px;
+		  }
+			/*  Make the navbar less deep, change 20px bottom to 1px and min height 20px not 50px */
+			.navbar {
+			  position: relative;
+			  min-height: 15px;
+			  margin-bottom: 2px;
+			  border: 1px solid transparent;
+			}
+		  /* Customize the navbar links to be fill the entire space of the .navbar */
+		  .navbar .navbar-inner {
+			padding: 0;
+		  }
+		  .navbar .nav {
+			margin: 0;
+			display: table;
+			width: 100%;
+		  }
+		  /* Make the navbar links wider and shallower, single lines  */
+		  .navbar .nav li {
+			display: table-cell;
+			width: 15%;
+			float: none;
+		  }
+		  .navbar .nav li a {
+			font-weight: bold;
+			text-align: center;
+			border-left: 1px solid rgba(255,255,255,.75);
+			border-right: 1px solid rgba(0,0,0,.1);
+		  }
+		  .navbar .nav li:first-child a {
+			border-left: 0;
+			border-radius: 3px 0 0 3px;
+		  }
+		  .navbar .nav li:last-child a {
+			border-right: 0;
+			border-radius: 0 3px 3px 0;
+		  }
+		  
+		  .nav > li > a {
+			  position: relative;
+			  display: block;
+			  padding: 1px 2px;
+			}
+		  
+		  .form-horizontal .control-label {
+			
+			padding-top: 0px;
+			
+			}
+			
+			input[type="text"] {
+				height: auto;
+			}
+			
+			.input-prepend .add-on-area {
+				display: inline-block;
+				width: auto;
+				height: 20px;
+				min-width: 16px;
+				padding: 14px 5px;
+				font-size: 14px;
+				font-weight: normal;
+				line-height: 18px;
+				text-align: center;
+				text-shadow: 0 1px 0 #fff;
+				background-color: #eee;
+				border: 1px solid #ccc;
+			}
+			
+			.input-prepend .add-on {
+				width: 90px;
+			}
+			.ui-jqgrid .ui-jqgrid-view { font-size:14px;}
+			.member-icons {
+	display: block;
+	text-indent: -99999px;
+	overflow: hidden;
+	background-repeat: no-repeat;
+}
+			.member-icons {
+				width: 16px;
+				height: 16px;
+				}
+				.member-icons ,
+			.ui-widget-content  .member-icons { background-image:url("images/money_euro3.png");}
+			//.member-icons {   background-image:url("images/ui-icons_222222_256x240.png");} 
+			 .money_euro  {  width: 16px;   height: 16px;background-position:-0px 0px; }
+			.money_promise {  width: 16px;   height: 16px;background-position:-16px 0px; }
+			.money_unpay {  width: 16px;   height: 16px;background-position:-32px 0px; }
+			 
+		
+			
+			 
+			

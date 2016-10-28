@@ -1,0 +1,79 @@
+<script type="text/javascript">
+$(function () {
+  $("#optionlist").jqGrid({ 
+        url: "/optiongrid",
+		editurl:"/editoption",
+        datatype: "json",
+		ignoreCase: true,
+        mtype: "GET",
+        colNames: ["Option Name", "Option Value"],
+        colModel: [
+           
+			{ name: "optionname", width: 220,editable: true, edittype:"text",editrules: { number: false, required: true}},
+             {name: "optionvalue", width: 220,editable: true, edittype:"text", editrules: { required: true}},
+		
+			
+        ],
+			pager: "#pager",
+			page:1, //LEY
+
+			onSelectRow: editRow,
+			rowNum: 10, 
+			rowList: [10, 20, 30],
+			sortname: "id",
+			sortorder: "asc", 
+			viewrecords: true,
+			loadonce:false,//true,  //LEY
+			gridview: true,
+			autoencode: true,
+			caption: "Options Table",
+			height:'auto',
+			altRows: false,
+			footerrow : false,
+			userDataOnFooter : false,
+			multiselect: false,
+			ajaxRowOptions: { async: true },
+			//cellEdit:true,
+			// multikey: "ctrlKey", 
+	
+	 
+    }); 
+            var lastSelection;
+function editRow(id) { var grid = $("option#list");
+                if (id && id !== lastSelection) {
+                   
+                    grid.jqGrid('restoreRow',lastSelection);
+                  //grid.jqGrid('editRow',id, {keys:true, focusField: 4}); 
+				 } 
+				 grid.jqGrid('FormToGrid', id,'#FormPost');
+				 grid.jqGrid('editRow',id, true,  {height:280,reloadAfterSubmit:true,closeAfterAddL:true,closeAfterEdit:true,closeOnEscape:true},'','','');//,editreload); //rowid, keys, oneditfunc, successfunc, url, extraparam, aftersavefunc,errorfunc, afterrestorefunc
+                    lastSelection = id;
+					//$("#"+id+"_formattedvalue").focus();
+                
+            }
+$('#optionlist').jqGrid('navGrid','#pager',
+		{ edit: true, add: true, del: true, search: false, refresh: true, view: false, position: "left", cloneToTop: false, },
+		{afterSubmit: function(response, postdata) { $("#optionlist").trigger("reloadGrid");return true;},
+		//},		
+		 beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).hide(); }  // for edit
+		}, // use default settings for edit
+		{dataheight:'350px',beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).show();$('#tr_paidthisyear', form).show(); }}, // use default settings for add
+		{},  // refresh   //for delete
+		{closeAfterAdd: true, 
+                    recreateForm: true
+				   }, // enable the advanced searching
+		{closeOnEscape:true}
+	
+
+                  );
+		//$('#optionlist').jqGrid('filterToolbar',{searchOperators: true,	});
+			
+
+});
+
+</script>
+ 
+
+    <table id="optionlist"><tr><td></td></tr></table> 
+    <div id="pager"></div> 
+	<br>

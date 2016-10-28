@@ -1,0 +1,65 @@
+<!-- check/checkedgrid.htm  -->
+<script type="text/javascript">
+$(function () {
+    $("#list").jqGrid({ 
+        url: "/checkedjqgrid",
+			// editurl:"/edituser",
+        datatype: "json",
+        mtype: "GET",
+        colNames: ["Rownumber","Surname", "Forename", "Number","Info ","Check Result"],//],
+        colModel: [
+           
+			{ name: "rownum", width: 80, editable: false },
+			{ name: "surname", width: 120, editable: false },
+			{ name: "forename", width: 120, editable: false },
+             {name: "membnum", width: 60, editable: false},
+             {name: "info", width: 140, editable: false},
+			 { name: "result", width: 360,align: "left",editable: false }, 
+
+			 /**/
+			
+        ],
+        pager: "#pager",
+		page:1,
+		//onSelectRow: editRow,
+		//width :700,
+        rowNum: 50,
+        rowList: [20, 50, 150],
+       // sortname: "rownum",
+       // sortorder: "asc",
+        viewrecords: true,
+		loadonce:true,
+        gridview: true,
+        autoencode: true,
+        caption: "User auto grid",
+		 height:'auto',
+		 altRows: true,
+		 footerrow : false,
+		 userDataOnFooter : false, 
+	
+    }); 
+	
+            var lastSelection;
+	        function editRow(id) {
+                if (id && id !== lastSelection) {
+                    var grid = $("#list");
+                    grid.jqGrid('restoreRow',lastSelection);
+                    grid.jqGrid('editRow',id, {keys:true, focusField: 4});
+                    lastSelection = id;
+                }
+            }
+
+
+ $('#list').navGrid('#pager',
+                { edit: false, add: false, del: false, search: false, refresh: true, view: false, position: "left", cloneToTop: false },
+				{
+                    closeAfterAdd: true,
+                    recreateForm: true,}
+					);
+	}			); 
+</script>
+ 
+
+    <table id="list"><tr><td></td></tr></table> 
+    <div id="pager"></div> 
+	<a href="{{ @BASE.'/check' }}"> Try Another Sheet</a>

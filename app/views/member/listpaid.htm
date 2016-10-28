@@ -1,0 +1,534 @@
+<script type="text/javascript">
+$(function () {
+
+ function focusOther() {  $('input:radio[id=feewhere_other]').prop('checked', true);
+ }
+ window.focusOther = focusOther; //to allow testing from console
+/*** localstorage setup for contents of current feespertype table ****************/
+storage=$.localStorage;
+if(storage.isEmpty('feespertypes')) { // if localstorage of feespertypes not set then 
+
+
+$.get('feespertypes','',function (data)  {
+$showit=$.parseJSON(data);
+$dec=$showit["M"];
+$dec=$showit["M"].firstyearfee;
+storage.set('feespertypes',$showit);
+/**  tests that it worked 
+$mtype='M';
+firstM = storage.get('feespertypes')[$mtype];
+firstM = storage.get('feespertypes')[$mtype].firstyearfee;
+***/
+});
+};
+
+function myamtelem (value, options) { // for feeexpected
+//Use rowid to get membertype
+var rowid= options.rowId;
+$mtype =$("#list").jqGrid('getCell',rowid,'membtype');
+//Need to identify the joined date & use the relevant fee amount
+//$feetopay = storage.get('feespertypes')[$mtype].feetopay;
+$feetopay = value;
+var elemStr = '<input id="'+options.id +'_text" type="text" size="20"  name="feeexpected"   value=	"'+$feetopay+'" >';
+//var elemStr = '<input id="'+options.id +'_text" type="text" size="20"  name="feeexpected"  value=	"'+$feetopay+'" >';
+//var elemStr =' '+$feetopay+' ';
+
+          // return DOM element from jQuery object
+          return $(elemStr)[0];
+}
+function myamtvalue(elem, operation, value) {
+//var rowid= options.rowId;
+//$mtype =$("#list").jqGrid('getCell',rowid,'membtype');
+//return  storage.get('feespertypes')[$mtype].feetopay;
+    if(operation === 'get') {
+	return parseInt(elem[0].value);
+return parseInt($('#TblGrid_list #amtpaidthisyear').val());	
+	} else if(operation === 'set') {
+	$('input',elem).val(200);
+       //$('input',elem).val(value);
+    }
+
+
+}
+// **************  functions for the custom elements in the add and edit forms for the feewhere element  ********** 
+ function myelem (value, options) { 
+// var el = document.createElement("input");
+ // el.type="radio";
+ // el.value = value;
+ // return el;
+//}
+var treaschecked =" ";
+var preschecked= " ";
+var otherchecked =" ";
+var bankchecked = " ";
+switch(value) {
+	case 'Treasurer':
+	case '':
+	treaschecked ='checked';
+	otherchecked =" ";
+	break;
+	case 'President':
+	preschecked	='checked';
+	break;
+	case 'Bank':
+	bankchecked	='checked';
+	break;
+	default:
+	otherchecked ="checked";
+	break;	
+
+}
+/************
+if (value=='Treasurer'||!value.trim() ) {
+treaschecked ='checked';
+otherchecked =" ";
+}
+else if(value=='President'){
+	preschecked	='checked';}
+		else {
+otherchecked ='checked';}
+******/
+
+var rowid= options.rowId;
+xnum =$("#list").jqGrid('getCell',rowid,'membnum');
+//********  get current value of feewhere , if not selected set to Treasurer, otherwise set to existng value
+
+//var elemStr = '<div><input id="'+options.id +'_treas" type="radio" size="10" name="fee" value="Treasurer" checked>Treasurer<br>'+
+var elemStr = '<div><input id="'+options.id +'_treas" type="radio" size="10" name="fee" value="Treasurer" '+treaschecked+'  >Treasurer<br>'+  // no default
+						'<input id="'+options.id +'_pres" type="radio" size="10" name="fee" value="President" '+preschecked+'  >President<br>'+
+						'<input id="'+options.id +'_bank" type="radio" size="10" name="fee" value="Bank" '+bankchecked+'  >Bank<br>'+
+						'<input id="'+options.id + '_other' +
+                        '" type="radio" size="20" name="fee" value="other" '+otherchecked +'> Other  '+
+						'<input id="'+options.id +'_text" type="text" size="20" onfocus="focusOther()" name="feewhere" value=	"'+value+'" ></div>';
+          // return DOM element from jQuery object
+          return $(elemStr)[0];
+		  }
+
+
+
+function myvalue(elem, operation, value) {
+    if(operation === 'get') {
+      // return $(elem).val();
+	  var fred=$('input[id*="amtpaid"]').val();
+	  var fred=$('input[id*="feewhere_text"]').val();
+	 if( $('input:radio[name="fee"]:checked').val() =='other') return  fred;
+		  else return $('input:radio[name="fee"]:checked').val();
+    } else if(operation === 'set') {
+       $('input',elem).val(value);
+    }
+}
+	  getColumnIndexByName = function(grid,columnName) {
+                    var cm = grid.jqGrid('getGridParam','colModel');
+                    for (var i=0,l=cm.length; i<l; i++) {
+                        if (cm[i].name===columnName) {
+                            return i; // return the index
+                        }
+                    }
+                    return -1;
+                },
+    $("#list").jqGrid({ 
+        url: "/membergrid",
+		editurl:"/app/views/markpaid",
+        datatype: "xml",
+			cellEdit:true, //LEY
+			cellsubmit: 'clientArray',
+		afterEditCell: function (id,name,val,iRow,iCol){
+			if(name=='amtpaidthisyear') {
+	
+			$("#"+iRow+"_amtpaidthisyear","#list").val();
+		}
+	},				
+		beforeSaveCell: function (rowid,name,val,iRow,iCol){ 
+			var grid = $("#list");
+			if(name=='amtpaidthisyear') {
+			
+			xamt=$("#"+iRow+"_amtpaidthisyear","#list").val();
+			xnum= $("#list").jqGrid('getCell',rowid,'membnum');
+			xpaid=$("#list").jqGrid('getCell',rowid,'paidthisyear');
+			xwhere=$("#list").jqGrid('getCell',rowid,'feewhere');
+			
+		}
+		else if (name=='feewhere'){
+		var fred=$('input[id*="feewhere_text"]').val();
+		 if( $('input:radio[name="fee"]:checked').val() =='other') xwhere=  fred;
+		  else xwhere = $('input:radio[name="fee"]:checked').val();
+			xamt=$("#list").jqGrid('getCell',rowid,'amtpaidthisyear');
+			xnum= $("#list").jqGrid('getCell',rowid,'membnum');
+			xpaid=$("#list").jqGrid('getCell',rowid,'paidthisyear');
+			
+		}
+		$.post("\amtpaid",{membnum:xnum,amtpaidthisyear:xamt,paidthisyear:xpaid,feewhere:xwhere},function(data) {
+			$showit=$.parseJSON(data);
+			
+						grid.jqGrid('setCell', rowid, 'paidthisyear', xpaid);
+						grid.jqGrid('setCell', rowid, 'amtpaidthisyear', xamt);
+						grid.jqGrid('setCell', rowid, 'feewhere', xwhere);
+						grid.jqGrid('getLocalRow', rowid).paidthisyear = $showit.paidthisyear;
+						grid.jqGrid('getLocalRow', rowid).amtpaidthisyear = $showit.amtpaidthisyear;
+						grid.jqGrid('getLocalRow', rowid).feewhere =  $showit.feewhere;
+						grid.jqGrid('saveRow',rowid, false,'clientArray');  // ensure the changed amount is saved locally
+						//NOW 
+						$("#list").jqGrid('footerData',	'set',{phone:$showit.lastfytotal});
+						$("#list").jqGrid('footerData',	'set',{location:$showit.thisfytotal});
+						
+		})
+	},
+		ignoreCase: true,
+        mtype: "GET",
+        colNames: ["Surname", "Forename", "Num.", "Phone","Mobile","Email","Type","Location","Paid","Amt Paid", 
+				" FeeWhere?",
+		"Pay","NotPaid",
+		"Waived",
+		"Joined"],//],
+        colModel: [
+            
+			{ name: "surname", width: 120,editable: false, edittype:"text",sortable:true,sorttype:'string',firstsortorder:'asc',searchoptions : {
+                            // show search options
+                            sopt: ["bw","eq"] // ge = greater or equal to, le = less or equal to, eq = equal to  							
+						}},
+             {name: "forename", width: 120,editable: false, edittype:"text"},
+			 { name: "membnum", width: 80,searchoptions : {sopt: ["eq"] } ,sorttype:'number'}, //  eq = equal to  	
+			{ name: "phone", width: 85, align: "right",editable: false, edittype:"text" },
+            { name: "mobile", width: 85, align: "right",editable: false, edittype:"text" }, 
+            { name: "email", width: 210, align: "right",editable: false, edittype:"text" ,searchoptions : {sopt: ["cn"] }}, 
+			 { name: "membtype", width: 90, align: "right",editable: false, 
+				},
+             { name: "location", width: 65, align: "right" },
+			 { name: "paidthisyear", width: 80, align: "right" ,editable: false,		  edittype:'select',editoptions:{value:"Y:Paid;N:Not Paid;W:Waived;"} }, 
+			  { name: "amtpaidthisyear", width: 80, align: "right",editable: true,edittype:'custom',editoptions:{custom_element: myamtelem, custom_value:myamtvalue},
+						searchoptions : {sopt: ["ge","le"] },searchrules:{integer:true},sorttype:'number'},
+			 
+			// { name: "feewhere", width: 80, align: "left",search:true,edittype:'custom',editoptions:{custom_element: myelem, custom_value:myvalue}},
+			{ name: "feewhere", width: 80, align: "left",search:true,hidden: false , edittype:'custom',editoptions:{custom_element: myelem, custom_value:myvalue} ,
+			 searchoptions : {sopt: ["bw","eq"] },editable: true, editrules: {edithidden:false,required:true}    },
+			   
+			  { name: 'pay', width: 40, sortable: false, search: false,
+                      formatter:function(){
+                         // return "<span class='ui-icon ui-icon-pencil'></span>"
+						 return  "<span class='member-icons  money_euro'></span>"
+                      }},
+				{ name: 'unpay', width: 65, sortable: false, search: false,
+                      formatter:function(){
+                         // return "<span class='ui-icon ui-icon-pencil'></span>"
+						  return  "<span class='member-icons  money_unpay'></span>"
+                      }},
+					  { name: 'waived', width: 65, sortable: false, search: false, hidden:false,
+                      formatter:function(){
+                         // return "<span class='ui-icon ui-icon-pencil'></span>"
+						  return  "<span class='member-icons  money_promise'></span>"
+                      }},	 
+
+{ name: "datejoined", width: 100, align: "right",search:false , hidden:true}, 					  
+			
+        ],
+        pager: "#pager",
+		//onSelectRow: editRow,  // LEY
+        rowNum: 20,
+        rowList: [10, 20, 30],multiSort: false,
+        sortname: "paidthisyear",
+
+        sortorder: "asc",
+		
+        viewrecords: true,
+        gridview: true,
+        autoencode: true,
+        caption: "",
+		 height:'auto',
+		 altRows: false,
+		 footerrow : true,
+		 userDataOnFooter : true,
+	 multiselect: false,
+	 loadonce:true,
+	data:leydata=new Array(),
+	 
+								//	 ajaxRowOptions: { async: true },
+	// multikey: "ctrlKey",
+/*loadComplete: function () { // change the edit icon into a Euro sign
+                   // $(this).find("div.ui-inline-del>span")
+				   $(this).find("span.ui-icon.ui-icon-pencil")
+                        .removeClass("ui-icon ui-icon-pencil")
+                        .addClass("member-icons  money_euro"); 
+		},*/
+		
+		/***********  Mark Clicked Euro icon  as Paid  , W Icon as Waived payment
+		if Waived empty feewhere, if marking as paid prompt for where the fees are**********/
+onclickSubmit: function (params,postdata) {
+var a=postdata;
+} ,
+
+onCellSelect: function (rowid,iCol,cellcontent,e) { 
+ var grid = $("#list");
+ 
+				payColumnIndex = getColumnIndexByName( $("#list"),'pay');
+                waivedColumnIndex = getColumnIndexByName( $("#list"),'waived');    
+                unpayColumnIndex = getColumnIndexByName( $("#list"),'unpay');    
+				//phoneColumnIndex = getColumnIndexByName( $("#list"),'phone');
+				//locationColumnIndex = getColumnIndexByName( $("#list"),'location');
+				amtpaidColumnIndex = getColumnIndexByName( $("#list"),'amtpaidthisyear');
+                		xnum= $("#list").jqGrid('getCell',rowid,'membnum');
+						
+						xtype=$("#list").jqGrid('getCell',rowid,'membtype');
+
+				if (iCol == amtpaidColumnIndex) { 
+					//rowNum= grid.jqGrid('getInd');
+					// grid.jqGrid('editRow',rowid, {keys:true, focusField: iCol});
+					//xfee= grid.jqGrid('getCell',rowid,'amtpaidthisyear').val();
+					xfee= $("#"+rowid+"_amtpaidthisyear").val();
+					$("#"+rowid+"_amtpaidthisyear").val(xfee);
+					//
+					}
+				if (iCol == payColumnIndex) { // clicked on to pay icon
+				           // var rowdata = $("#list").jqGrid('getGridParam',rowid);
+		/**		if(rowid){
+                $("#dialog-form").dialog('open');
+                var data = $("#list").jqGrid('getRowData',rowid);
+                alert(data);
+            }
+			*/
+			/******************CLICKED EURO to mark as paid  ADD additional fields then POST markpaid  *****************/
+			grid.jqGrid('editGridRow',rowid,{dataheight:290,height:390,width:500,closeAfterEdit:true,
+					onclickSubmit: function (options,postData) {
+						return{membnum:xnum,membtype:xtype}},
+						//editData: {membnum: $("#list").val()},
+					afterSubmit:function (response, postdata)  {
+						$showit=$.parseJSON(response.responseText);
+						var grid = $("#list");
+						var rowid = jQuery("#list").jqGrid('getGridParam','selrow');
+						grid.jqGrid('setRowData',rowid,$showit);
+						grid.jqGrid('setCell', postdata.id, 'amtpaidthisyear', $showit.amtpaidthisyear);// only works if reloadaftersubmit is true
+						/**** BUT that means all the other values will have to be put back into the grid */
+						$('#tr_amtpaidthisyear').value=$showit.amtpaidthisyear;
+						$( "#addeditdel" ).val( "edit actioned" );
+						 $( "#postresult" ).html( $showit.amtpaidthisyear );  //pop response from /markpaid into an html area at the bottom for diagnostics
+						grid.jqGrid('setCell', rowid, 'paidthisyear', $showit.paidthisyear);
+						grid.jqGrid('setCell', rowid, 'amtpaidthisyear', $showit.amtpaidthisyear);
+						grid.jqGrid('setCell', rowid, 'feewhere', 'Treasurer');
+						grid.jqGrid('getLocalRow', rowid).paidthisyear = $showit.paidthisyear;
+						grid.jqGrid('getLocalRow', rowid).amtpaidthisyear = $showit.amtpaidthisyear;
+						grid.jqGrid('getLocalRow', rowid).feewhere = 'Treasurer';
+						grid.jqGrid('saveRow',rowid, false,'clientArray');  // ensure the changed amount is saved locally
+						
+						$("#list").jqGrid('footerData',	'set',{phone:$showit.lastfytotal})
+						$("#list").jqGrid('footerData',	'set',{location:$showit.thisfytotal})
+						return [true];
+						},
+					reloadAfterSubmit:false,
+					beforeInitData: function(formid) { // Allows the Membership number etc to appear in the Edit Form
+							grid.jqGrid('setColProp','membnum',{editable:true});
+							grid.jqGrid('setColProp','forename',{editable:true});
+							grid.jqGrid('setColProp','surname',{editable:true});
+							grid.jqGrid('setColProp','amtpaidthisyear',{editable:true});
+							//grid.jqGrid('setColProp','amtpaidthisyear',{readonly:true});
+							$rowd = grid.jqGrid('getRowData',rowid);
+							$mtype =grid.jqGrid('getCell',rowid,'membtype');
+							$djoined=grid.jqGrid('getCell',rowid,'datejoined').split("-");
+							$djoinedD= new Date($djoined[0],$djoined[1]-1,$djoined[2]);
+							todayDate=new Date();
+							$startmonth="{{@u3astartmonth}}";
+							if (todayDate.getMonth() >=$startmonth-1) { // currently after June
+							dtest2= new Date(todayDate.getFullYear(), $startmonth-1, 1); // set to the recent July 1st
+							}
+							else { // before June so select July last year as the test date
+							dtest2= new Date(todayDate.getFullYear()-1, $startmonth-1, 1);// 1st half of year so subtract 1 from year and specify start of calc to be July1
+							}
+							if ($djoinedD>dtest2) { 
+							$feetopay = storage.get('feespertypes')[$mtype].firstyearfee;
+							}
+							else {$feetopay = storage.get('feespertypes')[$mtype].feetopay;
+							}
+							//dStart = new Date(
+							//is this the 1st u3a year for this member
+							// check if date joined is between the past July1 and now
+							
+							//if(grid.jqGrid('getCell',rowid,'membtype')
+							
+							
+							grid.jqGrid('setCell', rowid, 'amtpaidthisyear', $feetopay);
+						//	grid.jqGrid('setColProp','forename',{readonly:true});
+						//	grid.jqGrid('setColProp','surname',{readonly:true});
+							//$("#surname").prop("readonly", true);
+							if (grid.jqGrid('getCell',rowid,'paidthisyear')=='Y') return false;
+							},
+					beforeShowForm: function (formid) { // can change the contents of the form
+					
+						$("#forename").attr('style','color:red;');
+						//$("#forename").trigger('blur');
+						$("#surname").attr('style','color:red;');
+						$("#membnum").attr('style','color:red;');
+						$("#amtpaidthisyear").attr('style','color:red;');
+						$("#forename").prop("hidden", true); //so they cant be changed
+						$("#surname").prop("hidden", true);
+						$("#membnum").prop("hidden", true);
+						$("#amtpaidthisyear").prop("readonly", true);
+						$('#tr_surname td.DataTD').html(' '+$('#surname').val());
+						$('#tr_forename td.DataTD').html('  '+$('#forename').val());
+						$('#tr_membnum td.DataTD').html('  '+$('#membnum').val());
+						$('#tr_amtpaidthisyear td.CaptionTD').html('Amount Expected to Pay&nbsp;&nbsp;&nbsp;&nbsp; ');
+						$('#tr_amtpaidthisyear td.DataTD').html('  '+$('#amtpaidthisyear').val());
+						 //reset to zero now that the expected amount is in the for -** in case form is cancelled
+						 grid.jqGrid('setCell', rowid, 'amtpaidthisyear', 0);
+						
+						},
+
+						afterComplete: function(formid){
+							grid.jqGrid('setColProp','membnum',{editable:false});
+							grid.jqGrid('setColProp','forename',{editable:false});
+							grid.jqGrid('setColProp','surname',{editable:false});
+$("#amtpaidthisyear").prop("readonly", false);							
+							//grid.jqGrid('setColProp','amtpaidthisyear',{editable:false});					
+						}
+		
+						});
+
+	//$("#list").trigger("reloadGrid", [{ page: 1}]);
+						}
+				if (iCol == waivedColumnIndex) { // might be waived payment this year
+						var retval = confirm("Do you really want to mark this Member as WAIVED ? \n ");
+						if( retval == true ){
+						$.post("\markwaived",{membnum:xnum,membtype:xtype,feewhere:' '},function(data) {
+						$showit=$.parseJSON(data);
+						grid.jqGrid('setCell', rowid, 'paidthisyear', $showit.paidthisyear);
+						grid.jqGrid('setCell', rowid, 'amtpaidthisyear', $showit.amtpaidthisyear);
+						grid.jqGrid('setCell', rowid, 'feewhere', ' ');
+						grid.jqGrid('getLocalRow', rowid).paidthisyear = $showit.paidthisyear;
+						grid.jqGrid('getLocalRow', rowid).amtpaidthisyear = $showit.amtpaidthisyear;
+						grid.jqGrid('getLocalRow', rowid).feewhere = ' ';
+						grid.jqGrid('saveRow',rowid, false,'clientArray');  // ensure the changed amount is saved locally
+						//NOW 
+						$("#list").jqGrid('footerData',	'set',{phone:$showit.lastfytotal})
+						$("#list").jqGrid('footerData',	'set',{location:$showit.thisfytotal})
+						});  
+						}
+						}
+				if (iCol == unpayColumnIndex) { // clear payments and feewhere
+				      var retval = confirm("Do you really want to mark this Member as NOT PAID ? \n ");
+						if( retval == true ){
+						$.post("\markunpay",{membnum:xnum,membtype:xtype,feewhere:' '},function(data) {
+						$showit=$.parseJSON(data);
+						grid.jqGrid('setCell', rowid, 'paidthisyear', $showit.paidthisyear);
+						grid.jqGrid('setCell', rowid, 'amtpaidthisyear', $showit.amtpaidthisyear);
+						grid.jqGrid('setCell', rowid, 'feewhere', ' ');
+						grid.jqGrid('getLocalRow', rowid).paidthisyear = $showit.paidthisyear;
+						grid.jqGrid('getLocalRow', rowid).amtpaidthisyear = $showit.amtpaidthisyear;
+						grid.jqGrid('getLocalRow', rowid).feewhere = ' ';
+						grid.jqGrid('saveRow',rowid, false,'clientArray');  // ensure the changed amount is saved locally
+
+						$("#list").jqGrid('footerData',	'set',{phone:$showit.lastfytotal})
+						$("#list").jqGrid('footerData',	'set',{location:$showit.thisfytotal})
+						});  
+						}
+						}
+					},
+	/*			onSelectRow: function(id) {
+				return true;
+				}***************/
+	
+    }); 
+	
+		/**************Pseudo   EDIT BUTTON ****/
+$(".money_euro").click(function(){
+$( "#addeditdel" ).val( "" );
+	var gr = jQuery("#list").jqGrid('getGridParam','selrow');
+	if( gr != null ) jQuery("#list").jqGrid('editGridRow',gr,{dataheight:390,height:490,width:500,closeAfterEdit:true,afterSubmit:afterFormEdit,reloadAfterSubmit:true,beforeShowForm: function(form) { $('#tr_amtpaidthisyear', form).hide(); }});
+	/**  hide amtpaid this year so that it doesn't get erroneously overwritten.  Can edit in inline mode */
+	else alert("Please Select Row");
+});	
+
+
+
+$('#list').jqGrid('filterToolbar',{searchOperators: true,	})
+var lastSelection;
+	function editRow(id) { var grid = $("#list");
+                if (id && id !== lastSelection) {
+				grid.jqGrid('getLocalRow', lastSelection).amtpaidthisyear
+                grid.jqGrid('restoreRow',lastSelection);
+				
+                  //  grid.jqGrid('editRow',id, {keys:true, focusField: 4}); 
+				 } grid.jqGrid('editRow',id, true,  '','','','',editreload);
+				// $("#"+id+"_formattedvalue").focus();
+                    lastSelection = id;
+              }
+function editreload(rowid, result) {
+			//get response and update the local grid for those values that are computed i.e. amtpaidthisyear
+			$showit=$.parseJSON(result.responseText);
+			grid.jqGrid('setCell', rowid, 'amtpaidthisyear', $showit.amtpaidthisyear);
+			grid.jqGrid('setCell', rowid, 'paidthisyear', $showit.paidthisyear);
+		$curpg=$('#list').getGridParam('page'); // current page
+		//$("#list").trigger("reloadGrid", [{ page: $curpg}]); 
+		reloadpage($curpg);
+		}		
+function reload(rowid, result) {
+		$("#list").trigger("reloadGrid", [{ page: 1}]);
+		}
+function reloadpage(relpage) {
+		$("#list").trigger("reloadGrid", [{ page: relpage}]);
+		}			
+
+		
+	$('#list').navGrid('#pager',
+                { edit: true, add: false, del: false, search: false, refresh: true, view: false, position: "left", cloneToTop: true },
+				{// for edit
+			beforeInitData: function(formid) { // Allows the Membership number to appear in the Edit Form
+               $("#list").jqGrid('setColProp','membnum',{editable:true});
+            },
+			beforeShowForm: function (formid) {
+                $("#list").jqGrid('setColProp','membnum',{editable:false});
+            },
+			afterShowForm: function (formid) {
+                $("#list").jqGrid('setColProp','membnum',{editable:false});
+            },
+			onclickSubmit: function (params,postdata) {
+			var a=postdata;
+			} ,
+			//editData: {membnum: $("#list").val()}
+			},
+               {     closeAfterAdd: true,
+                    recreateForm: true,});
+			//LEY $('#list').jqGrid('filterToolbar',{searchOperators: false,	});
+			
+
+
+//***************  REFRESH BUTTON **********/
+$("#cm1").click( function() { //Refresh
+		var grid = $("#list");
+		//$('grid').jqGrid('clearGridData');
+		//$('grid').jqGrid('setGridParam', {data: dataToLoad});
+		//
+		  var text = $("#searchText").val();
+    var postdata = grid.jqGrid('getGridParam', 'postData');
+    // build up the filter
+    // ['equal','not equal', 'less', 'less or equal','greater','greater or equal', 'begins with','does not begin with','is in','is not in','ends with','does not end with','contains','does not contain']
+    // ['eq','ne','lt','le','gt','ge','bw','bn','in','ni','ew','en','cn','nc']
+    var myfilter =  '{"groupOp":"AND","rules":[{"field":"paidthisyear","op":"ne","data":"\'A\'"}]}';         
+ 
+
+      $.extend(postdata, { filters: myfilter });
+    grid.jqGrid('setGridParam', { search: false, postData: postdata,datatype:'xml' });        
+    grid.trigger("reloadGrid", [{ page: 1,datatype:'xml'}]);
+ 
+});
+
+
+
+
+
+//var postdata = grid.jqGrid('getGridParam', 'leydata');
+});
+
+
+</script>
+ 
+
+    <table id="list"><tr><td></td></tr></table> 
+    <div id="pager"></div> 
+	<div id="postresult" ></div>
+		<br>
+	<br>
+<div id="dialog-div">
+    <input type="text">
+</div>
+
+	<a href="javascript:void(0)" id="cm1">Refresh with NO Filter</a>
+	<br>
+		<input type="hidden" id="addeditdel" value="a" />
+

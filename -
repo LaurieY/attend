@@ -1,0 +1,6 @@
+--2015-09-14 06:16:08--  http://members.u3a.es/weeklyreports/paid
+Resolving members.u3a.es... 50.23.201.244
+Connecting to members.u3a.es|50.23.201.244|:80... connected.
+HTTP request sent, awaiting response... 500 Internal Server Error
+2015-09-14 06:16:11 ERROR 500: Internal Server Error.
+
