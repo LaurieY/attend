@@ -113,14 +113,14 @@ function action_event_post () {
 		$api_logger = new MyLog('api.log');
 		$api_logger->write( 'Entering action_event_post #114 POST='.var_export($f3->get('POST'),true),$uselog  ) ;	
 		// POST contains only the id and the action to be performed
-		$event_id=$f3->get('POST')['id'];
+		
 		$action = $f3->get('POST')['action'];
 		$event = new Event($this->db);
 		$api_logger->write( 'Entering action_event_post #119 with action'.var_export($action,true),$uselog  ) ;
 		switch ($action){
 		case 'trash':	
 // mark the event as not active
-	
+			$event_id=$f3->get('POST')['id'];
 			$event->load(array('event_id =?',$event_id));
 			if(!$event->dry() ){	$api_logger->write( 'Entering action_event_post TRASH POST',$uselog  ) ;
 			$event->active ='N';
@@ -128,6 +128,7 @@ function action_event_post () {
 		break;
 		case 'untrash':	
 // mark the event as active iff the event_date is in the future and the event exists
+			$event_id=$f3->get('POST')['id'];
 			$api_logger->write( 'Entering action_event_post UNTRASH POST',$uselog  ) ;
 			$event->load(array('event_id =?',$event_id));
 			if(!$event->dry() ){ //event exists, it should anyway, else do nothing
@@ -144,6 +145,7 @@ function action_event_post () {
 				}				
 		break;
 		case 'delete':	
+			$event_id=$f3->get('POST')['id'];
 			$event->load(array('event_id =?',$event_id));
 			if(!$event->dry() ){ //event exists, it should anyway, else do nothing
 			$event_trail = array();
@@ -153,13 +155,59 @@ function action_event_post () {
 			$event_archive->add('event_trail');
 				$event->erase();
 			}
-		
 		break;
+		
+		case 'daily1':
+		//******* Run daily job
+
+		//******* The take POST parameter as a json array of arrays 
+		//******* Each array in the form 
+		//******* 'event_info'=> array('event_id','event_name','event_date','event_type','event_contact_email','event_limit'
+		$daily_array = json_decode($f3->get('POST')['daily'],true);
+	//	$api_logger->write( 'IN action_event_post Daily Job  = '.var_export($f3->get('POST'),true),$uselog  ) ;
+	//	$api_logger->write( 'IN action_event_post Daily Array  = '.var_export($daily_array,true),$uselog  ) ;
+		$this->do_daily1($daily_array);
+		break;
+		
 		}
 
-		$event->trash($id);
-		return($f3->get('BODY'));
+
+	//	return($f3->get('BODY'));
 }
+/**********************   First change all past events to active ='N'  *********
+***********************   Then go through each still active event received and update with any info received *******
+***********************   Each received event is in the future (inc today) ***********************************/
+function do_daily1($daily_array) {
+		require_once 'krumo/class.krumo.php'; 
+		$f3=Base::instance();
+		$uselog=$f3->get('uselog');
+		$api_logger = new MyLog('api.log');
+		$api_logger->write( 'Entering do_daily1 #184 =',$uselog  ) ;	
+
+		$event = new Event($this->db);	
+		$past_events = $event->past();
+	//	krumo("an event = ".var_export($past_events,true));
+		//		$api_logger->write( 'do_daily1 #190 '.var_export($past_events,true),$uselog  ); 
+		foreach($past_events as $an_event) {
+	//		krumo("an event = ".var_export($an_event,true));
+	//		krumo("an event ID = ".var_export($an_event->event_id	,true));
+		$an_event->active='N';
+		$an_event->save();
+		}
+		/*************  Now go through the received array  $daily_array  **/
+		$api_logger->write( 'do_daily1 #198 '.var_export($daily_array,true),$uselog  );
+		foreach($daily_array as $an_event) {
+			$api_logger->write( 'do_daily1 #200 '.var_export($an_event,true),$uselog  );
+			$event_id = $an_event['event_id'];
+						$api_logger->write( 'do_daily1 #202 '.var_export($event_id,true),$uselog  );
+		$event->load(array('event_id =?',$event_id));
+			
+		}
+		
+		
+	
+}
+
 /********** when sent to the bin  mark the event as inactive BODY just contains the ID ***/
 function trash_event_post () {
 		$f3=Base::instance();
@@ -333,9 +381,10 @@ function testattend3(){ //test of remote delete
 $url = 'http://testattend.u3a.world/event';
 $options = array(
     'method'  => 'POST',
-      'content' =>array('id'=>3005,'action'=>'delete'));
+      'content' =>array('id'=>3002,'action'=>'trash'));
 
 	$resp =  Web::instance()->request($url, $options);
+	krumo($resp);
 }
 }
 	

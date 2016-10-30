@@ -160,6 +160,8 @@ $f3->route('GET /testattend','AttendanceAjaxController->testattend');
 $f3->route('GET /testattend2','AttendanceAjaxController->testattend2'); 
 $f3->route('GET /testattend3','AttendanceAjaxController->testattend3'); 
 
+$f3->route('GET /do_daily1','AttendanceAjaxController->do_daily1');
+
 
 
 

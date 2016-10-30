@@ -24,3 +24,36 @@
 [28-Oct-2016 10:00:19 Europe/Madrid] PHP Parse error:  syntax error, unexpected ';', expecting ')' in /home/uaworld/testattend/app/controllers/AttendanceAjaxController.php on line 336
 [28-Oct-2016 10:00:19 Europe/Madrid] Fatal error: syntax error, unexpected ';', expecting ')'
 [28-Oct-2016 10:00:19 Europe/Madrid] [app/controllers/AttendanceAjaxController.php:336] 
+[28-Oct-2016 20:09:45 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[28-Oct-2016 20:09:45 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[28-Oct-2016 20:09:45 Europe/Madrid] [index.php:167] Base->run()
+[28-Oct-2016 20:12:10 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[28-Oct-2016 20:12:10 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[28-Oct-2016 20:12:10 Europe/Madrid] [index.php:167] Base->run()
+[28-Oct-2016 20:12:40 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[28-Oct-2016 20:12:40 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[28-Oct-2016 20:12:40 Europe/Madrid] [index.php:167] Base->run()
+[30-Oct-2016 20:23:38 Europe/Madrid] PHP Parse error:  syntax error, unexpected ',' in /home/uaworld/testattend/app/controllers/AttendanceAjaxController.php on line 184
+[30-Oct-2016 20:23:38 Europe/Madrid] Fatal error: syntax error, unexpected ','
+[30-Oct-2016 20:23:38 Europe/Madrid] [app/controllers/AttendanceAjaxController.php:184] 
+[30-Oct-2016 20:27:52 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[30-Oct-2016 20:27:52 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[30-Oct-2016 20:27:52 Europe/Madrid] [index.php:169] Base->run()
+[30-Oct-2016 20:30:18 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[30-Oct-2016 20:30:18 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[30-Oct-2016 20:30:18 Europe/Madrid] [index.php:169] Base->run()
+[30-Oct-2016 20:31:00 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[30-Oct-2016 20:31:00 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[30-Oct-2016 20:31:00 Europe/Madrid] [index.php:169] Base->run()
+[30-Oct-2016 20:32:25 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[30-Oct-2016 20:32:25 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[30-Oct-2016 20:32:25 Europe/Madrid] [index.php:169] Base->run()
+[30-Oct-2016 20:32:56 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[30-Oct-2016 20:32:56 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[30-Oct-2016 20:32:56 Europe/Madrid] [index.php:169] Base->run()
+[30-Oct-2016 20:34:08 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[30-Oct-2016 20:34:08 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[30-Oct-2016 20:34:08 Europe/Madrid] [index.php:169] Base->run()
+[30-Oct-2016 20:34:37 Europe/Madrid] HTTP 404 (GET /skins/default/bg.gif)
+[30-Oct-2016 20:34:37 Europe/Madrid] [lib/base.php:1532] Base->error(404)
+[30-Oct-2016 20:34:37 Europe/Madrid] [index.php:169] Base->run()

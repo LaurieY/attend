@@ -16,6 +16,16 @@ class Event extends DB\SQL\Mapper {
 		
         return $this->query;
     }
+	public function past() {
+ 
+	   $fw=Base::instance();
+		//var_dump($fw);// need to filter by current u3ayear
+		$today= date("Y-m-d",time() );
+		$this->load(array('event_date <?',$today  ) );
+		//$this->first();
+		
+        return $this->query;
+    }
 	public function trash($event_id) {
 		// mark the event as not active
 	 $fw=Base::instance();	
