@@ -15,4 +15,9 @@ class Attendee extends DB\SQL\Mapper {
 		
         return $this->query;
     }
+	public function add($attendee,$comment,$event_info) {
+		$fw=Base::instance();
+		
+		
+	}
 }

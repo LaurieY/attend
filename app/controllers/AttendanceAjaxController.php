@@ -87,21 +87,24 @@ public function addattend() {
 		$f3=Base::instance();
 		$uselog=$f3->get('uselog');
 	$api_logger = new MyLog('api.log');
-	$options =	new Option($this->db);
+	$options =	new Option($this->db); $api_logger->write( " #90 in addattend BODY= ".var_export($f3->get('BODY'),true),$uselog);$api_logger->write( " #90 in addattend POST= ".var_export($f3->get('POST'),true),$uselog);
 	$this->u3ayear = $f3->get('SESSION.u3ayear');
 		if($this->u3ayear =='') {$options->initu3ayear();		
 		$this->u3ayear = $f3->get('SESSION.u3ayear');}
 	$body=json_decode($f3->get('BODY'),true);
-	$event_info = $body['eventinfo'];
-	$api_logger->write( " #188 in addattend = ".var_export($body,true),$uselog);
+	$event_info = $body['event_info'];
+	$event_info['active']='Y';
+	$api_logger->write( " #96 in addattend = ".var_export($body,true),$uselog);
 	$event_ok = $this->add_event($event_info);  // add the event if it doesn't exist
+	
 	if (!$event_ok) { /******** For some reason the event doesn't exist and can't be added  *****/
-	$api_logger->write( "ERROR #191 in addattend **** EVENT Cant be added ****= ".var_export($event_info,true),$uselog);
+	$api_logger->write( "ERROR #99 in addattend **** EVENT Cant be added ****= ".var_export($event_info,true),$uselog);
 		return false;
 	}
+	
 	$persons = $body['persons'];
 	$comments = $body['comment'];
-	$attendees_ok= $this->add_attendees($persons, $comment);
+	$attendees_ok= $this->add_attendees($persons, $comment,$event_info);
 	
 	return true;
 	
@@ -133,7 +136,7 @@ function action_event_post () {
 			$event->load(array('event_id =?',$event_id));
 			if(!$event->dry() ){ //event exists, it should anyway, else do nothing
 				
-			$now =new DateTime(date("Y-m-d")) ; $api_logger->write( " add_event #153",$uselog  );
+			$now =new DateTime(date("Y-m-d")) ; $api_logger->write( " untrash #136",$uselog  );
 			$db_date = new DateTime($event->event_date);
 			$api_logger->write( 'IN action_event_post UNTRASH POST db date'.var_export($db_date,true),$uselog  ) ;
 			$api_logger->write( 'IN action_event_post UNTRASH POST $now'.var_export($now,true),$uselog  ) ;
@@ -179,10 +182,11 @@ function action_event_post () {
 ***********************   Each received event is in the future (inc today) ***********************************/
 function do_daily1($daily_array) {
 		require_once 'krumo/class.krumo.php'; 
+		$changes_ary =array('adds'=>0,'updates'=>0,'deactivates'=>0);
 		$f3=Base::instance();
 		$uselog=$f3->get('uselog');
 		$api_logger = new MyLog('api.log');
-		$api_logger->write( 'Entering do_daily1 #184 =',$uselog  ) ;	
+		$api_logger->write( 'Entering do_daily1 #185 =',$uselog  ) ;	
 
 		$event = new Event($this->db);	
 		$past_events = $event->past();
@@ -193,19 +197,99 @@ function do_daily1($daily_array) {
 	//		krumo("an event ID = ".var_export($an_event->event_id	,true));
 		$an_event->active='N';
 		$an_event->save();
+		$changes_ary['deactivates']++;
 		}
 		/*************  Now go through the received array  $daily_array  **/
 		$api_logger->write( 'do_daily1 #198 '.var_export($daily_array,true),$uselog  );
 		foreach($daily_array as $an_event) {
-			$api_logger->write( 'do_daily1 #200 '.var_export($an_event,true),$uselog  );
+		
 			$event_id = $an_event['event_id'];
-						$api_logger->write( 'do_daily1 #202 '.var_export($event_id,true),$uselog  );
-		$event->load(array('event_id =?',$event_id));
+						//
+			$an_event['active']='Y';	
+	$api_logger->write( 'do_daily1 #204 '.var_export($an_event,true),$uselog  );			
+			$resp=$this->add_event($an_event);
+			//update the tally of changes
+				switch ($resp) {
+				case 'add':
+				$changes_ary['adds']++;
+				break;			
+				case 'update':
+				$changes_ary['updates']++;
+				break;			
+				case 'deactivate':
+				$changes_ary['deactivates']++;
+				break;
+			}
 			
+			
+			$api_logger->write( 'do_daily1 #209 '.var_export($resp,true),$uselog  );
 		}
-		
-		
+		// now send email to webmaster on results
+		$this->email_daily_results($changes_ary);
+}
+function email_daily_results ($changes_ary) {
 	
+			$f3=Base::instance();
+		$uselog=$f3->get('uselog');
+		$api_logger = new MyLog('api.log');
+		//require_once	'vendor/swiftmailer/swiftmailer/lib/swift_required.php';
+	$text = "Daily Attendance System Cron Job";
+	$subject = 'Daily Attendance System Cron Job';
+	$from='attendance@u3a.world';
+	$to = 'laurie@u3a.international';
+	//$bcclist =	$options->find("optionname='emailbcc'");	
+	$docdir = $f3->get('BASE')."docs/";
+	$letters=parse_ini_file($docdir.'letters.ini',true); 
+	if (!$letters)	
+		{$email_logger->write( "In email letters Failed parse_ini\n");
+		return print("Failed parse_ini\n");
+		}
+		// Use PHP Mail instead of Swift
+	/********$transport = Swift_SmtpTransport::newInstance('mail.u3a.world', 25);
+	$transport->setUsername('laurie@u3a.international');
+	$transport->setPassword('Leyisnot70');
+	$swift = Swift_Mailer::newInstance($transport);
+	$message = new Swift_Message($subject);            *****/
+	$ht0= $letters['header']['css'];  krumo($ht0);
+	$cid =$letters['daily_cron_events']['letter']; $api_logger->write( "In email_daily_results sending #251 ".var_export($cid,true), $uselog);
+	$now =date("Y-m-d") ;
+	$cid3 = str_replace("*|today|*",$now,$cid);
+	$cid4 = str_replace("*|deactivates|*",$changes_ary['deactivates'],$cid3);	
+	$cid5 = str_replace("*|updates|*",$changes_ary['updates'],$cid4);	
+	$cid = str_replace("*|adds|*",$changes_ary['adds'],$cid5);	
+	$htp1 = $letters['pstyle']['p1'];  // get the replacement inline css for <p1> tags					
+	$htp2 = $letters['pstyle']['p2'];
+	$cid=str_replace("<p1>",$htp1,$cid);					
+	$cid=str_replace("<p2>",$htp2,$cid);
+	$html = 	$ht0.$cid;
+	/*** $message->setFrom($from);
+	$message->setBody($html, 'text/html');
+	$message->setTo($to);
+	$api_logger->write( "In joiner_email email adding Bcc as " . var_export($bcc,true), $uselog);
+	$message->setBcc($bcc);
+
+	$message->addPart($text, 'text/plain');
+$api_logger->write( "In email_daily_results sending #268 ".var_export($message,true), $uselog);
+if ($recipients = $swift->send($message, $failures)) {
+$api_logger->write( "In email_daily_results succesfully sent ", $uselog);
+//$email_logger->write( "In joiner_email email ".$html, $uselog);
+ return 0;
+} else {
+	$api_logger->write( "In email_daily_results UNsuccesfully sent with error ".print_r($failures,true), $uselog);
+	$api_logger->write( "In email_daily_results UNsuccesfully sent with recipients".print_r($recipients,true), $uselog);
+
+ echo "There was an error:\n";
+ return print_r($failures);
+ 
+}
+**/
+	$headers  = 'MIME-Version: 1.0' . "\r\n";
+	$headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+	$headers .= 'From: '.$from. "\r\n".
+   'Reply-To: webmaster@u3a.international' . "\r\n" .
+    'X-Mailer: PHP/' . phpversion();
+	$api_logger->write( "In email_daily_results sending #288 ".var_export($html,true), $uselog);
+	mail($to, $subject, $html, $headers);
 }
 
 /********** when sent to the bin  mark the event as inactive BODY just contains the ID ***/
@@ -237,67 +321,77 @@ function add_event_post () {
 		$api_logger->write( 'Entering add_event_post #120 POST='.var_export($f3->get('POST'),true),$uselog  ) ;	
 		
 		$event_info = json_decode($f3->get('BODY'),true)['event_info'];
-		$api_logger->write( 'Entering add_event_post #123 BODY decoded='.var_export($event_info,true),$uselog  ) ;	
-		$api_logger->write( 'Entering add_event_post #124 ID='.var_export($event_info['event_id'],true),$uselog  ) ;	
-		$resp=$this->add_event($f3->get('BODY'));
-	echo "From add_event_post with result = ".$resp;
+		$api_logger->write( 'Entering add_event_post #240 BODY decoded='.var_export($event_info,true),$uselog  ) ;	
+		$api_logger->write( 'Entering add_event_post #241 ID='.var_export($event_info['event_id'],true),$uselog  ) ;
+		
+		$resp=$this->add_event($event_info);
+	//echo "From add_event_post with result = ".$resp;
 }
-function add_event($event_body_json) {
+/****  add an event  return 'add' if an event added or 'changed' if it is changed ***/
+function add_event($event_body) {
 	$f3=Base::instance();
 		$uselog=$f3->get('uselog');
 		$api_logger = new MyLog('api.log');
-		$api_logger->write( 'Entering add_event #132 POST='.var_export(json_decode($event_body_json,true)['event_info'],true),$uselog  ) ;	
-	if ($event_body_json !=NULL) {krumo(" Parameter received ");}
+		$api_logger->write( 'Entering add_event #253 POST='.var_export($event_body,true),$uselog  ) ;	
+	if ($event_body !=NULL) {//krumo(" Parameter received ");
+	}
 	else{// Get POST params as its an api call not a local call
 
 	}
-	$event_info=json_decode($event_body_json,true)['event_info'];
-	krumo($event_info_json);
-	krumo($event_info);
-	krumo($event_info['event_id']);
+	//$event_info=json_decode($event_body_json,true)['event_info'];
+	$event_info= $event_body;
+	//krumo($event_info_json);
+	//krumo($event_info);
+	//krumo($event_info['event_id']);
 	
 		//$uselog=$f3->get('uselog');
 	$event = new Event($this->db);
 	/****   Populate the event property with the pre-existing event, if it exists then examine if it has any major changes, including date    */
 	$existing_event =$event->exists($event_info);
 	
-	if (!$event->exists($event_info)){ 	$api_logger->write( " add_event #148",$uselog  ) ; if(!$event->add($event_info)) { krumo("Failed on add ");return false;		}
-else  {	krumo("added brand new event");return true; }
+	if (!$event->exists($event_info)){ 	$api_logger->write( " add_event #270",$uselog  ) ; 
+	if(!$event->add($event_info)) { //krumo("Failed on add#267");
+	return false;		}
+else  {	//krumo("added brand new event #268");
+return 'add'; }
 	
 	}
 	else 
 	{/** existing active event so compare **/
-		$now =new DateTime(date("Y-m-d")) ; $api_logger->write( " add_event #153",$uselog  );
+		$now =new DateTime(date("Y-m-d")) ; $api_logger->write( " add_event #279",$uselog  );
 		$sent_date = new DateTime($event_info['event_date']);
 		$db_date = new DateTime($event->event_date);
 		$diff = $db_date->diff($sent_date)->format("%r%a");
-		krumo($diff);
-		krumo($event->event_date);
-		krumo("db date before now ");krumo($event->event_date < $now );
-		krumo($sent_date);
-		krumo($now);
-		krumo($sent_date > $now );
+		//krumo($diff);
+		//krumo($event->event_date);
+		//krumo("db date before now ");//krumo($event->event_date < $now );
+		//krumo($sent_date);
+		//krumo($now);
+		//krumo($sent_date > $now );
 		if($db_date < $now ) { /** db date in the past  then  deactivate **/
-					$api_logger->write( " add_event #164 db date =".$event->event_date,$uselog  );//Now deactivate entry 
+					$api_logger->write( " add_event #290 db date =".$event->event_date,$uselog  );//Now deactivate entry 
 					$event->active ='N';
 					$event->save(); 
 					if ($sent_date <$now)  {/** sent date also in the past update entry and return **/
 					$event_info['active']='N';
-						if(!$event->add($event_info)) { krumo("Failed on add ");return false;		}
-						return true;	}
+						if(!$event->add($event_info)) { //krumo("Failed on add ");
+						return false;		}
+						return 'deactivate';	}
 						else    /***  db date in past sent date in future create new entry  ***/
-						{ $event->reset(); $api_logger->write( " add_event #172",$uselog  );
-						krumo("adding new event with date in the future");
-							if(!$event->add($event_info)) { krumo("Failed on add ");return false;		}
-							return true;
+						{ $event->reset(); $api_logger->write( " add_event #299",$uselog  );
+						//krumo("adding new event with date in the future");
+							if(!$event->add($event_info)) { //krumo("Failed on add ");
+							return false;		}
+							return 'update';
 						}
 					}
 		else   /***  db date in future update entry  ***/
-					{ 		$api_logger->write( 'add_event #179 POST='.var_export($event->event_current_count,true),$uselog  ) ;	
+					{ 		$api_logger->write( 'add_event #307 POST='.var_export($event->event_current_count,true),$uselog  ) ;	
 
 						$event_info['event_current_count'] =$event->event_current_count;
-					if(!$event->add($event_info)) { krumo("Failed on add ");return false;		}	
-					return true;
+					if(!$event->add($event_info)) {// krumo("Failed on add ");
+					return false;		}	
+					return update;
 					}
 								
 		
@@ -309,8 +403,17 @@ else  {	krumo("added brand new event");return true; }
 	
 	
 }
-function add_attendees($attendees,$comment) {
-	
+function add_attendees($attendees,$comment, $event_info) {
+	$f3=Base::instance();
+	$uselog=$f3->get('uselog');
+	$api_logger = new MyLog('api.log');
+	$api_logger->write( 'Entering add_attendees'.var_export($attendees,true),$uselog  );	
+	//require_once 'krumo/class.krumo.php'; 
+	foreach($attendees as $person) {
+		/** add with the person details together with the event id and event date as keys  ***/
+			$attendee = new Attendee($this->db);
+			$attendee->add($person,
+	}
 	
 	return true;
 }
@@ -318,10 +421,14 @@ function testattend2() { /******  various test functions **/
 		$f3=Base::instance();
 		$uselog=$f3->get('uselog');
 	$api_logger = new MyLog('api.log');
-		$api_logger->write( 'Entering testattend2',$uselog  );	
+		$api_logger->write( 'Entering testattend2',$uselog  );
+	require_once 'krumo/class.krumo.php'; 		
 	$web = Web::instance();
 $url = 'http://testattend.u3a.world/addeventpost';
-$event_info =array('event_id'=>1001);
+//$event_info =array('event_id'=>1001);
+		$event_info =array('event_id'=> 2574, 'event_name' =>'fiddler-on-the-roof-the-musical-at-the-salon-theatre-in-fuengirola',
+		'event_date' => '2016-11-29','event_type'=>'event','event_limit'=>55, 'event_current_count'=>11	,'event_contact_email'=>'laurie29.lyates@gmail.com','active'=>'Y');
+krumo($event_info);
 	$body_all=array('event_info'=>$event_info);
 	$body_all_json = json_encode($body_all);
 $options = array(
@@ -329,7 +436,7 @@ $options = array(
    // 'content' => http_build_query($body_all_json));
     'content' => $body_all_json);
 $resp =  Web::instance()->request($url, $options);
-	$api_logger->write( 'testattend2 resp = '.var_export($resp,true),$uselog  );	
+	$api_logger->write( 'testattend2 resp #348 = '.var_export($resp,true),$uselog  );	
 krumo($resp);
 }
 function testattend() { /******  various test functions **/
@@ -340,7 +447,7 @@ function testattend() { /******  various test functions **/
 	/*********  Now test change of date to 23rd *****/
 		$event_info =array('event_id'=> 2574, 'event_name' =>'fiddler-on-the-roof-the-musical-at-the-salon-theatre-in-fuengirola',
 		'event_date' => '2016-11-29','event_type'=>'event','event_limit'=>55, 'event_current_count'=>11	,'event_contact_email'=>'laurie29.lyates@gmail.com','active'=>'Y');
-krumo("Event ".$event_info['event_date']);
+//krumo("Event ".$event_info['event_date']);
 $event_info_json = json_encode($event_info);
 	$event->reset();	
 	$this->add_event($event_info_json);
@@ -353,7 +460,7 @@ $event->erase();
 	$event_info =array('event_id'=> 2574, 'event_name' =>'fiddler-on-the-roof-the-musical-at-the-salon-theatre-in-fuengirola',
 		'event_date' => '2016-10-09','event_type'=>'event','event_limit'=>55, 'event_current_count'=>9,'event_contact_email'=>'laurie9.lyates@gmail.com','active'=>'Y');
 	$event_info_json = json_encode($event_info);
-	krumo("Brand new Event ".$event_info['event_date']);
+	//krumo("Brand new Event ".$event_info['event_date']);
 	$this->add_event($event_info_json);
 $test1 = $event->load();
 
@@ -362,14 +469,14 @@ $test1 = $event->load();
 		'event_date' => '2016-10-10','event_type'=>'event','event_limit'=>55, 'event_current_count'=>10	,'event_contact_email'=>'laurie10.lyates@gmail.com','active'=>'Y');
 			$event->reset();
 			$event_info_json = json_encode($event_info);
-			krumo(" Event ".$event_info['event_date']);
+			//krumo(" Event ".$event_info['event_date']);
 			$this->add_event($event_info_json);
 	//return 0;		
 			
 	/*********  Now test change of date to 23rd *****/
 		$event_info =array('event_id'=> 2574, 'event_name' =>'fiddler-on-the-roof-the-musical-at-the-salon-theatre-in-fuengirola',
 		'event_date' => '2016-10-29','event_type'=>'event','event_limit'=>55, 'event_current_count'=>29	,'event_contact_email'=>'laurie29.lyates@gmail.com','active'=>'Y');
-krumo("Event ".$event_info['event_date']);
+//krumo("Event ".$event_info['event_date']);
 	$event->reset();
 $event_info_json = json_encode($event_info);	
 	$this->add_event($event_info_json);
@@ -384,7 +491,7 @@ $options = array(
       'content' =>array('id'=>3002,'action'=>'trash'));
 
 	$resp =  Web::instance()->request($url, $options);
-	krumo($resp);
+	//krumo($resp);
 }
 }
 	
