@@ -87,27 +87,40 @@ public function addattend() {
 		$f3=Base::instance();
 		$uselog=$f3->get('uselog');
 	$api_logger = new MyLog('api.log');
-	$options =	new Option($this->db); $api_logger->write( " #90 in addattend BODY= ".var_export($f3->get('BODY'),true),$uselog);$api_logger->write( " #90 in addattend POST= ".var_export($f3->get('POST'),true),$uselog);
+	$options =	new Option($this->db); 
+	$api_logger->write( " #91 in addattend BODY= ".var_export($f3->get('BODY'),true),$uselog);
+	$api_logger->write( " #92 in addattend POST= ".var_export($f3->get('POST'),true),$uselog);
 	$this->u3ayear = $f3->get('SESSION.u3ayear');
 		if($this->u3ayear =='') {$options->initu3ayear();		
 		$this->u3ayear = $f3->get('SESSION.u3ayear');}
 	$body=json_decode($f3->get('BODY'),true);
+	$api_logger->write( " #97 in addattend body decoded = ".var_export($body,true),$uselog);
 	$event_info = $body['event_info'];
 	$event_info['active']='Y';
-	$api_logger->write( " #96 in addattend = ".var_export($body,true),$uselog);
+	$api_logger->write( " #100 in addattend body decoded  = ".var_export($body,true),$uselog);
 	$event_ok = $this->add_event($event_info);  // add the event if it doesn't exist
-	
-	if (!$event_ok) { /******** For some reason the event doesn't exist and can't be added  *****/
+		if (!$event_ok) { /******** For some reason the event doesn't exist and can't be added  *****/
 	$api_logger->write( "ERROR #99 in addattend **** EVENT Cant be added ****= ".var_export($event_info,true),$uselog);
-		return false;
+		echo "ERROR Event Cant be added";
 	}
 	
 	$persons = $body['persons'];
-	$comments = $body['comment'];
+	$comment = $body['comment'];
 	$attendees_ok= $this->add_attendees($persons, $comment,$event_info);
+	/************ Add people_count to the event record	event_current_count ***************/
 	
-	return true;
-	
+		$event_id = $event_info['event_id'];
+		if(!$attendees_ok['ok']) echo $attendees_ok['response'];
+		switch ($attendees_ok['response']){ 
+		case 'Attendees added OK': echo $attendees_ok['response'];
+		break;
+		case 'Attendees added to waiting list':
+		echo $attendees_ok['added']." Added and ".$attendees_ok['waitlisted']." Waitlisted";
+		//$event
+		break;
+		default:
+		echo "Attendees Added with response ".var_export( $attendees_ok['response'],true);
+		}
 }
 
 function action_event_post () {
@@ -204,6 +217,7 @@ function do_daily1($daily_array) {
 		foreach($daily_array as $an_event) {
 		
 			$event_id = $an_event['event_id'];
+			$an_event['event_type']= explode("pods",$an_event['event_type'])[1] ;
 						//
 			$an_event['active']='Y';	
 	$api_logger->write( 'do_daily1 #204 '.var_export($an_event,true),$uselog  );			
@@ -400,23 +414,87 @@ return 'add'; }
 	}
 
 	
-	
-	
 }
-function add_attendees($attendees,$comment, $event_info) {
+function add_attendees($attendees,$comment_ary, $event_info) {
 	$f3=Base::instance();
 	$uselog=$f3->get('uselog');
 	$api_logger = new MyLog('api.log');
-	$api_logger->write( 'Entering add_attendees'.var_export($attendees,true),$uselog  );	
-	//require_once 'krumo/class.krumo.php'; 
-	foreach($attendees as $person) {
+	$api_logger->write( 'Entering add_attendees #413 attendees ='.var_export($attendees,true),$uselog  );	
+	$comment = $comment_ary['comment']; $api_logger->write( 'Entering add_attendees #414 comment ='.var_export($comment,true),$uselog  );	
+	$attendee_responses = array();
+	$requester_email = $attendees[0]['email'];
+	//$requester_comment = $comment;
+	$requester_id=0;
+	$event = new Event($this->db);
+	$event->load(array('event_id =?',$event_info['event_id']));
+	$event_limit=$event->event_limit;
+	$event_current_count =$event->event_current_count;
+	foreach($attendees as $akey=>$person) {
 		/** add with the person details together with the event id and event date as keys  ***/
+		/**** check that the person hasn't already been added for that event, if it has just not add aggain but remember that and email it ***/
 			$attendee = new Attendee($this->db);
-			$attendee->add($person,
-	}
+			$person['email'] = $requester_email;
+			$api_logger->write( 'Adding attendees #424 with requester_id '.$requester_id,$uselog  );$api_logger->write( 'Adding attendees #424 with akey'.$akey,$uselog  );
+			$resp =$attendee->add($person,$comment,$event_info,$requester_id);
+				$api_logger->write( 'Adding attendees #426 with response '.var_export($resp,true),$uselog  );	
+				$attendee_responses[] =array('name'=>$person['name'],'response'=>$resp[0]);
+				if($akey ==0) { 
+				//its the requester, the first person so remember the id that has been returned for  any other persons to be inserted into the attendees entries
+				$requester_id = $resp[1];
+					}
+
+			}
+			//***********  Now generate email response to adding names ***/
+			$resp_text ='';
+			$people_count=0;$waiting_count=0;
+		foreach($attendee_responses as $a_response) {
+			switch($a_response['response']) {
+				case 'exists':
+				case 'updated':
+			 //was already in the database for this event
+			$resp_text .= $a_response['name']." was already in the system as attending this event<br>\n";
+			break;
+			case 'added':
+				if($event_current_count -$event_limit > 0)	{
+					$event_current_count++;
+					$people_count++;
+					}
+				else{ // add to waiting list 	
+					$event_current_count++;
+					$waiting_count++;
+					}
+			$people_count++;
+			$resp_text .= $a_response['name']." has been added to the list to attend this event<br>\n";	
+			break;
+			}
+				
+		}	
+
+		
+		$api_logger->write( 'Added '.$people_count.' attendees and waitlisted '.$waiting_count.' with email text  '.$resp_text,$uselog  );
 	
-	return true;
+	return array('ok'=>true, 'response'=>'Attendees added OK','added'=> $people_count, 'waitlisted'=>$waiting_count);
 }
+
+function get_event_info(){
+	$f3=Base::instance();
+	$uselog=$f3->get('uselog');
+	$api_logger = new MyLog('api.log');
+	$api_logger->write( 'Entering get_event_info with id = '.var_export($f3->get('PARAMS.id'),true),$uselog  );	
+ /**** Get event details & pass back to wordpress in an array format
+ 
+'event_type' 'event_limit' 'event_current_count'
+***************************/
+	$event= new Event($this->db);
+	$event->load(array('event_id =?',$f3->get('PARAMS.id')));
+	$api_logger->write( 'get_event_info #471 with event_type  = '.$event->event_type,$uselog  );	
+	//$api_logger->write( 'get_event_info #472 with event_type sub  = '.explode("pods",$event->event_type)[1] ,$uselog  );	
+	$event_info = array('event_type'=>$event->event_type , 
+		'event_limit'=> $event->event_limit, 'event_current_count'=>$event->event_current_count);
+	echo json_encode($event_info);
+	
+}
+
 function testattend2() { /******  various test functions **/
 		$f3=Base::instance();
 		$uselog=$f3->get('uselog');
@@ -436,7 +514,7 @@ $options = array(
    // 'content' => http_build_query($body_all_json));
     'content' => $body_all_json);
 $resp =  Web::instance()->request($url, $options);
-	$api_logger->write( 'testattend2 resp #348 = '.var_export($resp,true),$uselog  );	
+	$api_logger->write( 'testattend2 resp #463 = '.var_export($resp,true),$uselog  );	
 krumo($resp);
 }
 function testattend() { /******  various test functions **/
