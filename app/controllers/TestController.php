@@ -25,6 +25,8 @@ class TestController extends Controller {
 	$this->attendee1 = array('name'=>'Laurie Yates','number'=>180,'email'=>'laurie@lyates.com','member_guest'=>'M');
 	$this->attendee2 = array('name'=>'Junior 1 Yates','number'=>NULL,'email'=>NULL,'member_guest'=>'G');
 	$this->attendee3 = array('name'=>'Junior 2 Yates','number'=>NULL,'email'=>NULL,'member_guest'=>'G');
+	$this->attendee4 = array('name'=>'Susan Yates','number'=>181,'email'=>'laurie@lyates.com','member_guest'=>'M');
+	$this->attendee5 = array('name'=>'Susan Elizabeth Yates','number'=>1081,'email'=>'laurie@lyates.com','member_guest'=>'M');
 	
 	$this->comment_ary=array('comment'=>'Ello');	
 	$this->event_info  = array('number_of_names'=>1,'event_id'=>99999,'event_name'=>'Test Event','event_date'=> '2016-12-07',
@@ -34,6 +36,7 @@ class TestController extends Controller {
 	}
 function unitattend() {
 	$f3=Base::instance();
+
 	$testnum = $f3->get('PARAMS.test');
 	$test = new Test;
 	//krumo($test);
@@ -63,6 +66,9 @@ function unitattend1(&$test,$testnum) {  //return test object
 	$f3=Base::instance();
 	//$testnum = $f3->get('PARAMS.test');
 	require_once 'krumo/class.krumo.php'; 
+		$uselog=$f3->get('uselog');
+	$api_logger = new MyLog('api.log');
+	$api_logger->write( 'Entering unitattend1 #69',$uselog  );	
 	// Set up
 	//$test=new Test;
 	//krumo($test);
@@ -159,7 +165,12 @@ function unitattend1(&$test,$testnum) {  //return test object
 			'Test 4b:- delete Event check event_id does exists, received '.$this->event->dry() );	
 		/*********  The event has been created it should have the correct event_id ******/		
 			$test->expect($test_resp->event_id == $this->event_info['event_id'],
-			'Test 4c:- Create Event check event_id, received '.var_export($test_resp->event_id,true) );	
+			'Test 4ca:- Create Event check event_id, received '.var_export($test_resp->event_id,true) );	
+			
+			$test->expect(!$this->event->event_full,
+			'Test 4cb:- Create Event check event_full false, received '.var_export($this->event->event_full,true) );	
+			
+	
 		/*********  The event has been created try to add 3 people should return Waiting ******/	
 			$this->persons =array();
 			$this->persons[] = $this->attendee1; 
@@ -177,7 +188,8 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$this->event->load(array('event_id=?',$this->event_info['event_id']));
 			$test->expect($this->event->event_current_count== 3,
 			'Test 4e:- POST to addattend expect event_current_count ==3 ,received '.$this->event->event_current_count
-		)	;		
+		)	;	
+
 		$this->attendee->load(array('request_status = "Waitlisted" and event_id=?',$this->event_info['event_id']));
 			$test->expect($this->attendee->dry(),
 			'Test 4f:- POST to addattend expect attendees as Waitlisted to be  dry,received '.$this->attendee->dry()
@@ -191,34 +203,59 @@ function unitattend1(&$test,$testnum) {  //return test object
 			'Test 4g:- POST to addattend expect only 3 attendees, received '.$attendees_count
 		)	;		
 
-		$this->attendee->load(array('request_status = "Booked" and event_id=?',$this->event_info['event_id']));
-			$test->expect(!$this->attendee->dry(),
-			'Test 4h:- POST to addattend expect attendees as Booked to be NOT dry,received '.$this->attendee->dry()
+		$this->attendee->load(array('request_status = "Waitlisted" and event_id=?',$this->event_info['event_id']));
+			$test->expect($this->attendee->dry(),
+			'Test 4h:- POST to addattend expect attendees as Waitlisted to be  dry,received '.$this->attendee->dry()
 		)	;
-	
-		// Now try to add again check not duplicated attendees
+		$api_logger->write( 'Entering unitattend1 4I #208',$uselog  );	
+		krumo("4I");
+		// Now try to add same attendees again check not duplicated attendees and they are added ok
 	//	krumo($body_all_json);
 		$test_resp=$f3->mock('POST /addattend',NULL,NULL, $body_all_json); 
 		$attendees_count= $this->attendee->count();
 			$test->expect($attendees_count==3,
 			'Test 4i:- POST to addattend expect only 3 attendees, received '.$attendees_count
 		)	;
-		$test->expect($test_resp== 'Waitlisted',
-			'Test 4j:- POST to addattend expect "Waitlisted" ,received '.var_export($test_resp,true) 
+		krumo("4J");
+			$api_logger->write( 'Entering unitattend1  4J #218',$uselog  );	
+		$test->expect($test_resp== 'Booked',
+			'Test 4j:- POST to addattend expect "Booked" ,received '.var_export($test_resp,true) 
 		)	;	
 	//Now set attendess to be just the 1st name, expect it to be NOT booked as per policy-1-B
 	
 		$this->persons =array();
-		$this->persons[] = $this->attendee1; 
-		$this->event_info['number_of_names'] =1;	
+		$this->persons[] = $this->attendee4; 
+		$this->event_info['number_of_names'] =2;	
 		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment);
 		$body_all_json = json_encode($body_all);//krumo($body_all_json);		
 	
-	$test_resp=$f3->mock('POST /addattend',NULL,NULL, $body_all_json); 
+		$test_resp=$f3->mock('POST /addattend',NULL,NULL, $body_all_json); 
 	//	krumo($test_resp);
 			$test->expect($test_resp!= 'Booked',
 			'Test 4k:- POST to addattend expect NOT  "Booked" ,received '.var_export($test_resp,true) 
 		)	;	
+		// Now try adding #1 and #4 should get #1 booked #4 waitlisted
+		$this->persons =array();
+		$this->persons[] = $this->attendee1; 
+		$this->persons[] = $this->attendee5; 
+		$this->event_info['number_of_names'] =2;	
+		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment);
+		$body_all_json = json_encode($body_all);//krumo($body_all_json);		
+	krumo("4L");
+		$test_resp=$f3->mock('POST /addattend',NULL,NULL, $body_all_json); 
+			$test->expect($test_resp!= 'Booked',
+			'Test 4l:- POST to addattend expect NOT  "Booked" ,received '.var_export($test_resp,true) 
+		)	;	
+		$this->event->load(array('event_id=?',$this->event_info['event_id']));
+			$test->expect($this->event->event_current_count== 5,
+			'Test 4m:- POST to addattend expect event_current_count ==5 ,received '.$this->event->event_current_count
+		)	;	
+
+		$waitlisted_count= $this->attendee->count(array('request_status = "Waitlisted" and event_id=?',$this->event_info['event_id']));
+			$test->expect($waitlisted_count ==2,
+			'Test 4n:- POST to addattend expect count attendees as Waitlisted to be 2,received '.$waitlisted_count
+		)	;
+		
 		break;
 		//$test->expect($test_resp[1]=='Attendees added OK'
 	 }

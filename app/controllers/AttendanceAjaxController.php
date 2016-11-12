@@ -450,7 +450,12 @@ function add_attendees($attendees,$comment_ary, $event_info) {
 	$event_current_count =$event->event_current_count;
 	$number_of_attendees= count($attendees);
 	$return_message = 'Attendees added OK';
-	if ( ($event_limit >0) and ($number_of_attendees > ($event_limit - $event_current_count))) $request_over_limit = true ;
+		krumo('attendees = ');krumo($attendees);krumo('event full = '.$event->event_full);
+	if ( ($event_limit >0) and (0 > ($event_limit - $event_current_count))) {$request_over_limit = true ;
+	//krumo('request over limit '.$request_over_limit);
+	}
+	
+	
 	foreach($attendees as $akey=>$person) {
 		/** add with the person details together with the event id and event date as keys  ***/
 		/**** check that the person hasn't already been added for that event, if it has just not add again but remember that and email it ***/
@@ -459,6 +464,7 @@ function add_attendees($attendees,$comment_ary, $event_info) {
 			$api_logger->write( 'Adding attendees #435 with requester_id '.$requester_id,$uselog  );$api_logger->write( 'Adding attendees #424 with akey'.$akey,$uselog  );
 		//die();
 		$resp =$attendee->add($person,$comment,$event_info,$requester_id,$request_over_limit);
+		krumo($resp);
 			$api_logger->write( 'Adding attendees #437 with response '.var_export($resp,true),$uselog  );	
 			// $resp[0] is of the form Updated, Existed, Added
 			$attendee_responses[] =array('name'=>$person['name'],'response'=>$resp[0], 'id'=>$resp[1],'request_status'=>$resp[2]);
@@ -508,6 +514,7 @@ function add_attendees($attendees,$comment_ary, $event_info) {
 	
 	$event->load(array('event_id =?',$event_info['event_id']));
 	$event->event_current_count =$event_current_count;
+	if(!$event_current_count < $event->event_limit) $event->event_full = true;
 	$event->save();
 	//krumo($waiting_count);
 	$api_logger->write( $people_count.' attendees and waitlisted '.$waiting_count.' with email text  '.$resp_text,$uselog  );
