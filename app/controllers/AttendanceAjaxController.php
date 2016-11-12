@@ -83,45 +83,7 @@ public function attendance_list() {
 }
 
 
-public function addattend() {
-		$f3=Base::instance();
-		$uselog=$f3->get('uselog');
-	$api_logger = new MyLog('api.log');
-	$options =	new Option($this->db); 
-	$api_logger->write( " #91 in addattend BODY= ".var_export($f3->get('BODY'),true),$uselog);
-	$api_logger->write( " #92 in addattend POST= ".var_export($f3->get('POST'),true),$uselog);
-	$this->u3ayear = $f3->get('SESSION.u3ayear');
-		if($this->u3ayear =='') {$options->initu3ayear();		
-		$this->u3ayear = $f3->get('SESSION.u3ayear');}
-	$body=json_decode($f3->get('BODY'),true);
-	$api_logger->write( " #97 in addattend body decoded = ".var_export($body,true),$uselog);
-	$event_info = $body['event_info'];
-	$event_info['active']='Y';
-	$api_logger->write( " #100 in addattend body decoded  = ".var_export($body,true),$uselog);
-	$event_ok = $this->add_event($event_info);  // add the event if it doesn't exist
-		if (!$event_ok) { /******** For some reason the event doesn't exist and can't be added  *****/
-	$api_logger->write( "ERROR #99 in addattend **** EVENT Cant be added ****= ".var_export($event_info,true),$uselog);
-		echo "ERROR Event Cant be added";
-	}
-	
-	$persons = $body['persons'];
-	$comment = $body['comment'];
-	$attendees_ok= $this->add_attendees($persons, $comment,$event_info);
-	/************ Add people_count to the event record	event_current_count ***************/
-	
-		$event_id = $event_info['event_id'];
-		if(!$attendees_ok['ok']) echo $attendees_ok['response'];
-		switch ($attendees_ok['response']){ 
-		case 'Attendees added OK': echo $attendees_ok['response'];
-		break;
-		case 'Attendees added to waiting list':
-		echo $attendees_ok['added']." Added and ".$attendees_ok['waitlisted']." Waitlisted";
-		//$event
-		break;
-		default:
-		echo "Attendees Added with response ".var_export( $attendees_ok['response'],true);
-		}
-}
+
 
 function action_event_post () {
 		$f3=Base::instance();
@@ -407,73 +369,152 @@ return 'add'; }
 					return false;		}	
 					return update;
 					}
-								
-		
-		
-		
+
 	}
 
-	
 }
+/*************************************************************************************************************
+******************  Called via http from Wordpress 										************
+******************  responds with a message indicating if the names are added 			************
+******************  and also the number that have been  Confirmed or Waitlisted			************
+******************  the message format from add_attendees is an array 'ok' true or false, 'confirmed' a count, 'waitlisted' a count 	************
+******************	This can handle either policy whether to wait all or only a part of a request ************
+**************************************************************************************************************/
+function addattend() {
+		$f3=Base::instance();
+		$uselog=$f3->get('uselog');
+	$api_logger = new MyLog('api.log');
+	$options =	new Option($this->db); 
+	$api_logger->write( " #382 in addattend BODY= ".var_export($f3->get('BODY'),true),$uselog);
+	$api_logger->write( " #383 in addattend POST= ".var_export($f3->get('POST'),true),$uselog);
+	$this->u3ayear = $f3->get('SESSION.u3ayear');
+		if($this->u3ayear =='') {$options->initu3ayear();		
+		$this->u3ayear = $f3->get('SESSION.u3ayear');}
+	$body=json_decode($f3->get('BODY'),true);
+	//krumo($body);
+	$api_logger->write( " 388 in addattend body decoded = ".var_export($body,true),$uselog);
+	$event_info = $body['event_info'];
+	$event_info['active']='Y';
+	$api_logger->write( " #391 in addattend body decoded  = ".var_export($body,true),$uselog);
+	$event_ok = $this->add_event($event_info);  // add the event if it doesn't exist
+		if (!$event_ok) { /******** For some reason the event doesn't exist and can't be added  *****/
+	$api_logger->write( "ERROR #394 in addattend **** EVENT Cant be added ****= ".var_export($event_info,true),$uselog);
+		return "ERROR Event Cant be added";
+	}
+	
+	$persons = $body['persons'];
+	$comment = $body['comment'];
+	
+	$attendees_ok= $this->add_attendees($persons, $comment,$event_info);
+	//krumo($attendees_ok);
+	/************ Add people_count to the event record	event_current_count ***************/
+	$api_logger->write( ' #402 in addattend with attendees_ok response = '.var_export($attendees_ok,true),$uselog);
+//return($attendees_ok['response']); return;
+		$event_id = $event_info['event_id'];
+		if(!$attendees_ok['ok']) return $attendees_ok['response'];
+		switch ($attendees_ok['response']){ 
+		case 'Booked': 
+		case 'Waitlisted':
+		return $attendees_ok['response'];
+		break;
+	
+		//$event
+		break;
+		default:
+		return "Attendees Added with response ".var_export( $attendees_ok['response'],true);
+		}
+}
+/***********************************************************************************************
+*************	before adding check if the number of persons would take the event over its limit
+*************	if so make sure the return message  says "Request in Waitlist" ****************
+*************	Called internally from addattend which has decoded the message into an array, and as a test point  ****
+******************  the message format ex add_attendees is an array 'ok' true or false, 'confirmed' a count, 'waitlisted' a count 	************
+
+************************************************************************************************/
+
 function add_attendees($attendees,$comment_ary, $event_info) {
 	$f3=Base::instance();
 	$uselog=$f3->get('uselog');
+		require_once 'krumo/class.krumo.php'; 
 	$api_logger = new MyLog('api.log');
-	$api_logger->write( 'Entering add_attendees #413 attendees ='.var_export($attendees,true),$uselog  );	
+	$api_logger->write( 'Entering add_attendees #420 attendees ='.var_export($attendees,true),$uselog  );	
 	$comment = $comment_ary['comment']; $api_logger->write( 'Entering add_attendees #414 comment ='.var_export($comment,true),$uselog  );	
 	$attendee_responses = array();
 	$requester_email = $attendees[0]['email'];
-	//$requester_comment = $comment;
+	$api_logger->write( 'In add_attendees #424 attendees ='.var_export($attendees,true),$uselog  );	
 	$requester_id=0;
 	$event = new Event($this->db);
 	$event->load(array('event_id =?',$event_info['event_id']));
+	//krumo($event->event_id);
 	$event_limit=$event->event_limit;
 	$event_current_count =$event->event_current_count;
+	$number_of_attendees= count($attendees);
+	$return_message = 'Attendees added OK';
+	if ( ($event_limit >0) and ($number_of_attendees > ($event_limit - $event_current_count))) $request_over_limit = true ;
 	foreach($attendees as $akey=>$person) {
 		/** add with the person details together with the event id and event date as keys  ***/
-		/**** check that the person hasn't already been added for that event, if it has just not add aggain but remember that and email it ***/
+		/**** check that the person hasn't already been added for that event, if it has just not add again but remember that and email it ***/
 			$attendee = new Attendee($this->db);
 			$person['email'] = $requester_email;
-			$api_logger->write( 'Adding attendees #424 with requester_id '.$requester_id,$uselog  );$api_logger->write( 'Adding attendees #424 with akey'.$akey,$uselog  );
-			$resp =$attendee->add($person,$comment,$event_info,$requester_id);
-				$api_logger->write( 'Adding attendees #426 with response '.var_export($resp,true),$uselog  );	
-				$attendee_responses[] =array('name'=>$person['name'],'response'=>$resp[0]);
+			$api_logger->write( 'Adding attendees #435 with requester_id '.$requester_id,$uselog  );$api_logger->write( 'Adding attendees #424 with akey'.$akey,$uselog  );
+		//die();
+		$resp =$attendee->add($person,$comment,$event_info,$requester_id,$request_over_limit);
+			$api_logger->write( 'Adding attendees #437 with response '.var_export($resp,true),$uselog  );	
+			// $resp[0] is of the form Updated, Existed, Added
+			$attendee_responses[] =array('name'=>$person['name'],'response'=>$resp[0], 'id'=>$resp[1],'request_status'=>$resp[2]);
 				if($akey ==0) { 
 				//its the requester, the first person so remember the id that has been returned for  any other persons to be inserted into the attendees entries
 				$requester_id = $resp[1];
-					}
+				}
 
 			}
+/***********************************************************************************************************
+**********	 At this point we have received an array of array responses 'name' & 'response' ****************
+**********	 The overall status of the request would be either 'Booked' or 'Waitlisted'		****************	
+**********	 	
 			//***********  Now generate email response to adding names ***/
 			$resp_text ='';
 			$people_count=0;$waiting_count=0;
-		foreach($attendee_responses as $a_response) {
+		foreach($attendee_responses as $akey=>$a_response) {
+		//	krumo($a_response['response']);
 			switch($a_response['response']) {
-				case 'exists':
-				case 'updated':
-			 //was already in the database for this event
+				case 'existed': // the case where there is no comment change
+				case 'updated': // the case where the comment is updated
+			 //was already in the database for this event get the attendee request_status
+			if($a_response['request_status'] =='Booked')  	$people_count++;
+			else $waiting_count++;
+			 
 			$resp_text .= $a_response['name']." was already in the system as attending this event<br>\n";
 			break;
 			case 'added':
-				if($event_current_count -$event_limit > 0)	{
-					$event_current_count++;
+			$event_current_count++;
+				if($a_response['request_status'] =='Booked')	{
+							
 					$people_count++;
 					}
-				else{ // add to waiting list 	
-					$event_current_count++;
+				else{ // add to waiting count 	
+				
 					$waiting_count++;
 					}
-			$people_count++;
+			
 			$resp_text .= $a_response['name']." has been added to the list to attend this event<br>\n";	
 			break;
+			default:
+			krumo(' Hit default #490 with case '.var_export($a_response,true).' in person # '.$akey);
 			}
 				
 		}	
-
-		
-		$api_logger->write( 'Added '.$people_count.' attendees and waitlisted '.$waiting_count.' with email text  '.$resp_text,$uselog  );
+/***********  Now update the event_current_count in the event table **************/
 	
-	return array('ok'=>true, 'response'=>'Attendees added OK','added'=> $people_count, 'waitlisted'=>$waiting_count);
+	$event->load(array('event_id =?',$event_info['event_id']));
+	$event->event_current_count =$event_current_count;
+	$event->save();
+	//krumo($waiting_count);
+	$api_logger->write( $people_count.' attendees and waitlisted '.$waiting_count.' with email text  '.$resp_text,$uselog  );
+	$resp=array('ok'=>true, 'response'=>'Booked','added'=> $people_count, 'waitlisted'=>$waiting_count);
+	if($waiting_count >0) $resp['response']='Waitlisted';
+	
+	return $resp;
 }
 
 function get_event_info(){
@@ -487,89 +528,16 @@ function get_event_info(){
 ***************************/
 	$event= new Event($this->db);
 	$event->load(array('event_id =?',$f3->get('PARAMS.id')));
-	$api_logger->write( 'get_event_info #471 with event_type  = '.$event->event_type,$uselog  );	
-	//$api_logger->write( 'get_event_info #472 with event_type sub  = '.explode("pods",$event->event_type)[1] ,$uselog  );	
+	$api_logger->write( 'get_event_info #531 with event_type  = '.$event->event_type,$uselog  );	
+	//$api_logger->write( 'get_event_info #532 with event_type sub  = '.explode("pods",$event->event_type)[1] ,$uselog  );	
 	$event_info = array('event_type'=>$event->event_type , 
 		'event_limit'=> $event->event_limit, 'event_current_count'=>$event->event_current_count);
+	$api_logger->write( 'get_event_info #535 with event_info  = '.var_export($event_info,true),$uselog  );	
+	$api_logger->write( 'get_event_info #536 with event_info encoded  = '.json_encode($event_info),$uselog  );	
 	echo json_encode($event_info);
 	
 }
 
-function testattend2() { /******  various test functions **/
-		$f3=Base::instance();
-		$uselog=$f3->get('uselog');
-	$api_logger = new MyLog('api.log');
-		$api_logger->write( 'Entering testattend2',$uselog  );
-	require_once 'krumo/class.krumo.php'; 		
-	$web = Web::instance();
-$url = 'http://testattend.u3a.world/addeventpost';
-//$event_info =array('event_id'=>1001);
-		$event_info =array('event_id'=> 2574, 'event_name' =>'fiddler-on-the-roof-the-musical-at-the-salon-theatre-in-fuengirola',
-		'event_date' => '2016-11-29','event_type'=>'event','event_limit'=>55, 'event_current_count'=>11	,'event_contact_email'=>'laurie29.lyates@gmail.com','active'=>'Y');
-krumo($event_info);
-	$body_all=array('event_info'=>$event_info);
-	$body_all_json = json_encode($body_all);
-$options = array(
-    'method'  => 'POST',
-   // 'content' => http_build_query($body_all_json));
-    'content' => $body_all_json);
-$resp =  Web::instance()->request($url, $options);
-	$api_logger->write( 'testattend2 resp #463 = '.var_export($resp,true),$uselog  );	
-krumo($resp);
-}
-function testattend() { /******  various test functions **/
-	$f3=Base::instance();
-	require_once 'krumo/class.krumo.php'; 
-	$event = new Event($this->db);
-	
-	/*********  Now test change of date to 23rd *****/
-		$event_info =array('event_id'=> 2574, 'event_name' =>'fiddler-on-the-roof-the-musical-at-the-salon-theatre-in-fuengirola',
-		'event_date' => '2016-11-29','event_type'=>'event','event_limit'=>55, 'event_current_count'=>11	,'event_contact_email'=>'laurie29.lyates@gmail.com','active'=>'Y');
-//krumo("Event ".$event_info['event_date']);
-$event_info_json = json_encode($event_info);
-	$event->reset();	
-	$this->add_event($event_info_json);
-	//return 0;
-	
-	
-	
-$event->load(array('event_id =?',2574));
-$event->erase();
-	$event_info =array('event_id'=> 2574, 'event_name' =>'fiddler-on-the-roof-the-musical-at-the-salon-theatre-in-fuengirola',
-		'event_date' => '2016-10-09','event_type'=>'event','event_limit'=>55, 'event_current_count'=>9,'event_contact_email'=>'laurie9.lyates@gmail.com','active'=>'Y');
-	$event_info_json = json_encode($event_info);
-	//krumo("Brand new Event ".$event_info['event_date']);
-	$this->add_event($event_info_json);
-$test1 = $event->load();
 
-/*********  Now test change of date to 10th *****/
-		$event_info =array('event_id'=> 2574, 'event_name' =>'fiddler-on-the-roof-the-musical-at-the-salon-theatre-in-fuengirola',
-		'event_date' => '2016-10-10','event_type'=>'event','event_limit'=>55, 'event_current_count'=>10	,'event_contact_email'=>'laurie10.lyates@gmail.com','active'=>'Y');
-			$event->reset();
-			$event_info_json = json_encode($event_info);
-			//krumo(" Event ".$event_info['event_date']);
-			$this->add_event($event_info_json);
-	//return 0;		
-			
-	/*********  Now test change of date to 23rd *****/
-		$event_info =array('event_id'=> 2574, 'event_name' =>'fiddler-on-the-roof-the-musical-at-the-salon-theatre-in-fuengirola',
-		'event_date' => '2016-10-29','event_type'=>'event','event_limit'=>55, 'event_current_count'=>29	,'event_contact_email'=>'laurie29.lyates@gmail.com','active'=>'Y');
-//krumo("Event ".$event_info['event_date']);
-	$event->reset();
-$event_info_json = json_encode($event_info);	
-	$this->add_event($event_info_json);
-	$test2 = $event->load();
-
-
-}
-function testattend3(){ //test of remote delete
-$url = 'http://testattend.u3a.world/event';
-$options = array(
-    'method'  => 'POST',
-      'content' =>array('id'=>3002,'action'=>'trash'));
-
-	$resp =  Web::instance()->request($url, $options);
-	//krumo($resp);
-}
 }
 	

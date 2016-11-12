@@ -163,7 +163,9 @@ $f3->route('GET /geteventinfo/@id','AttendanceAjaxController->get_event_info');
 
 $f3->route('GET /do_daily1','AttendanceAjaxController->do_daily1');
 
-
+$f3->route('GET /unithello','TestController->unithello');
+$f3->route('GET /unitattend/@test','TestController->unitattend');
+$f3->route('GET /unitattend1','TestController->unitattend1');
 
 
 

@@ -1,11 +1,9 @@
 <?php
-
 class Event extends DB\SQL\Mapper {
-
-    public function __construct(DB\SQL $db) {
+function __construct(DB\SQL $db) {
         parent::__construct($db,'events');
     }
-	public function future() {
+function future() {
        // $this->load();
 	   
 	   $fw=Base::instance();
@@ -16,7 +14,7 @@ class Event extends DB\SQL\Mapper {
 		
         return $this->query;
     }
-	public function past() {
+		public function past() {
  
 	   $fw=Base::instance();
 		//var_dump($fw);// need to filter by current u3ayear
@@ -26,7 +24,7 @@ class Event extends DB\SQL\Mapper {
 		
         return $this->query;
     }
-	public function trash($event_id) {
+function trash($event_id) {
 		// mark the event as not active
 	 $fw=Base::instance();	
 	 $this->load(array('event_id =?',$event_id));
@@ -38,8 +36,11 @@ class Event extends DB\SQL\Mapper {
 		
 	}
 	
-    public function add($event_info) {
+function add($event_info) {
       //  $this->copyFrom('POST');
+	  require_once 'krumo/class.krumo.php'; 
+	//  krumo($event_info);
+	  
 	    $fw=Base::instance();
 		//$this->u3ayear=$fw->get('SESSION.u3ayear');
 		$event_id = $event_info['event_id'];
@@ -59,10 +60,10 @@ class Event extends DB\SQL\Mapper {
 		//$this->created_at=date("Y-m-d H:i:s");
 		//$this->updated_at=date("Y-m-d H:i:s");
         $ret=$this->save();
-		return $this;
+		return $ret;
     }
 	
-	public function exists($event_info) {
+function exists($event_info) {
 	$fw=Base::instance();	
 	$event_id = $event_info['event_id'];
 	$this->load(array('active ="Y" and event_id =?',$event_id));
