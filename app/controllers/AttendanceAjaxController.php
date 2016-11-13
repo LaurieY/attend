@@ -385,8 +385,8 @@ function addattend() {
 		$uselog=$f3->get('uselog');
 	$api_logger = new MyLog('api.log');
 	$options =	new Option($this->db); 
-	$api_logger->write( " #382 in addattend BODY= ".var_export($f3->get('BODY'),true),$uselog);
-	$api_logger->write( " #383 in addattend POST= ".var_export($f3->get('POST'),true),$uselog);
+	$api_logger->write( " #388 in addattend BODY= ".var_export($f3->get('BODY'),true),$uselog);
+	$api_logger->write( " #389 in addattend POST= ".var_export($f3->get('POST'),true),$uselog);
 	$this->u3ayear = $f3->get('SESSION.u3ayear');
 		if($this->u3ayear =='') {$options->initu3ayear();		
 		$this->u3ayear = $f3->get('SESSION.u3ayear');}
@@ -450,13 +450,15 @@ function add_attendees($attendees,$comment_ary, $event_info) {
 	$event_current_count =$event->event_current_count;
 	$number_of_attendees= count($attendees);
 	$return_message = 'Attendees added OK';
-		krumo('attendees = ');krumo($attendees);krumo('event full = '.$event->event_full);
-	if ( ($event_limit >0) and (0 > ($event_limit - $event_current_count))) {$request_over_limit = true ;
-	//krumo('request over limit '.$request_over_limit);
+	//	krumo('attendees = ');krumo($attendees);krumo('event full = '.$event->event_full);
+	if ( $event->event_full or (($event_limit >0) and (0 > ($event_limit - $event_current_count)))) {$request_over_limit = true ;
+//	krumo('request over limit '.$request_over_limit);
 	}
 	
 	
 	foreach($attendees as $akey=>$person) {
+		if($akey ==0) 	$person['requester'] = true;
+		//krumo($person);
 		/** add with the person details together with the event id and event date as keys  ***/
 		/**** check that the person hasn't already been added for that event, if it has just not add again but remember that and email it ***/
 			$attendee = new Attendee($this->db);
@@ -464,13 +466,14 @@ function add_attendees($attendees,$comment_ary, $event_info) {
 			$api_logger->write( 'Adding attendees #435 with requester_id '.$requester_id,$uselog  );$api_logger->write( 'Adding attendees #424 with akey'.$akey,$uselog  );
 		//die();
 		$resp =$attendee->add($person,$comment,$event_info,$requester_id,$request_over_limit);
-		krumo($resp);
+	//	krumo($resp);
 			$api_logger->write( 'Adding attendees #437 with response '.var_export($resp,true),$uselog  );	
 			// $resp[0] is of the form Updated, Existed, Added
 			$attendee_responses[] =array('name'=>$person['name'],'response'=>$resp[0], 'id'=>$resp[1],'request_status'=>$resp[2]);
 				if($akey ==0) { 
 				//its the requester, the first person so remember the id that has been returned for  any other persons to be inserted into the attendees entries
 				$requester_id = $resp[1];
+
 				}
 
 			}
@@ -511,10 +514,12 @@ function add_attendees($attendees,$comment_ary, $event_info) {
 				
 		}	
 /***********  Now update the event_current_count in the event table **************/
-	
 	$event->load(array('event_id =?',$event_info['event_id']));
+//	krumo($event_current_count);krumo($event->event_limit);krumo($event->event_full);
 	$event->event_current_count =$event_current_count;
-	if(!$event_current_count < $event->event_limit) $event->event_full = true;
+	//krumo($event->event_limit - $event_current_count) ;
+	if(($event->event_limit - $event_current_count )<0	) $event->event_full = true;
+//	krumo($event->event_full);
 	$event->save();
 	//krumo($waiting_count);
 	$api_logger->write( $people_count.' attendees and waitlisted '.$waiting_count.' with email text  '.$resp_text,$uselog  );

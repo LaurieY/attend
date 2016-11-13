@@ -45,7 +45,9 @@ function add($event_info) {
 		//$this->u3ayear=$fw->get('SESSION.u3ayear');
 		$event_id = $event_info['event_id'];
 	$this->load(array('event_id =?',$event_id));
-	if($this->dry() ) $this->created_at=date("Y-m-d H:i:s");
+	if($this->dry() ) {$this->created_at=date("Y-m-d H:i:s");
+	
+	}
 		$this->event_id=$event_info['event_id'];	
 		$this->event_name=$event_info['event_name'];	
 		//$event_info['event_date'] = DateTime::createFromFormat('M  d,Y', $event_info['event_date'])->format('Y-m-d H:i:s'); //$mysql_date_string;	
@@ -54,7 +56,8 @@ function add($event_info) {
 		$this->event_limit=$event_info['event_limit'];	
 		$this->active=$event_info['active'];	
 		
-		$this->event_current_count=$event_info['event_current_count'];	
+		if($this->dry() ) $this->event_current_count=$event_info['event_current_count'];	 // dont change current count if an update
+				
 	//	$this->number_of_names=$event_info['number_of_names'];	
 		$this->event_contact_email=$event_info['event_contact_email'];	
 		//$this->created_at=date("Y-m-d H:i:s");

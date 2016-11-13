@@ -16,7 +16,7 @@ function all() {
         return $this->query;
     }
 function add($attendee,$comment,$event_info,$requester_id,$request_over_limit) {
-	krumo('attendee add request_over_limit = '.$request_over_limit);
+	//krumo($request_over_limit);
 		$fw=Base::instance();
 		// check if potentially over the limit, not actually over if the person is already booked
 		// only update any comments if it already exists, never change the request status if already exists
@@ -34,14 +34,14 @@ function add($attendee,$comment,$event_info,$requester_id,$request_over_limit) {
 			$event_info['event_id'], $event_info['event_date'],$attendee['name'] ));
 
 		if(!$this->dry()) { // duplicate person for the event 
-		krumo('$request_status = '.$request_status);
-		krumo('$this->request_status = '.$this->request_status);
+	//	krumo('$request_status = '.$request_status);
+		//krumo('$this->request_status = '.$this->request_status);
 	//	if($comment != $this->request_comment || ($this->request_status != $request_status)) {
 		// the comment has changed so add the new comment OR the request status has changed 
 		if($comment != $this->request_comment ) {
 			// the comment has changed so add the new comment 
 						if(is_null($this->request_comment)) $this->request_comment="";			
-							$this->request_comment=$this->request_comment.' '.$comment;
+							$this->request_comment=$this->request_comment.'/'.$comment;
 							//$this->request_status = $request_status;
 							//krumo($this->request_status);
 							$this->save();
@@ -52,7 +52,8 @@ function add($attendee,$comment,$event_info,$requester_id,$request_over_limit) {
 	//	krumo($this);
 // a new entry	
 // if the requester_id is -1 then this is the requester for the overall request so don't see the requester_id till after the 1st save	
-		if($requester_id<>0) $this->requester_id  = $requester_id;
+		if($requester_id<>0) {$this->requester_id  = $requester_id;
+		}
 		if($request_over_limit) 
 			$request_status = 'Waitlisted';
 		else
@@ -60,13 +61,14 @@ function add($attendee,$comment,$event_info,$requester_id,$request_over_limit) {
 		$this->created_at=date("Y-m-d H:i:s");	
 		$this->request_comment=$comment;
 		$this->request_status = $request_status;
+		$this->requester = $attendee['requester'];
 		$this->requester_email=$attendee['email'];	// this was added by the calling function for all the attendees
 		$this->name=$attendee['name'];
 		$this->membnum=$attendee['number'];
 		$this->member_guest=$attendee['member_guest'];
 		$this->event_id=$event_info['event_id'];
 		$this->event_date=$event_info['event_date'];
-		krumo($this->request_status);
+	//	krumo($this->requester);
 
 		$resp = $this->save();
 		if($requester_id==0) { // this was the requester entry so add its own id into the record
