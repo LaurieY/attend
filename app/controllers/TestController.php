@@ -420,48 +420,45 @@ private function clear_event($event_id) {
 
 
 
-function unithello() {
-	//$f3=require(__DIR__.'/lib/base.php'); // path to f3
-$f3=Base::instance();
-// Set up
-$test=new Test;
-include('hello.php');
+function fiddle() {
+require_once 'krumo/class.krumo.php'; 	
+		$f3=Base::instance();
+		
+$json1= '{   "total": "xxx", 
+  "page": "yyy", 
+  "records": "zzz",
+  "rows" : [
+    {"id" :"1", "cell" :["cell11", "cell12", "cell13"]},
+    {"id" :"2", "cell":["cell21", "cell22", "cell23"]}  ]}';	
+krumo( $json1);
+echo '<br>';
+ krumo(json_decode($json1,true));
+$json2= '{   "totalpages" : 1, 
+  "currpage" : 1,
+  "totalrecords" : 84,
+  "eventdata" : [    {"id" : "1","event_name":"cell11", "event_date" :"cell12", "event_contact_email" :"cell13"},
+    {"id" : "2","event_name":"cell21", "event_date" :"cell22", "event_contact_email" :"cell23"} ]}';
+  krumo($json2);
+  echo '<br>';
+  krumo(json_decode($json2,true));
+ $this->event->load(array('event_id=?',$this->event_info['event_id']));
+ 
+ krumo($this->event->event_name);
+ 
+ $event_count= $this->event->count(array('active = "Y"'));
+	krumo($event_count);
+$events=$this->event->find(array(	'active = "Y"'));
 
-// This is where the tests begin
-$test->expect(
-    is_callable('hello'),
-    'hello() is a function'
-);
-
-// Another test
-$hello=hello();
-$test->expect(
-    !empty($hello),
-    'Something was returned'
-);
-
-// This test should succeed
-$test->expect(
-    is_string($hello),
-    'Return value is a string'
-);
-
-// This test is bound to fail
-$test->expect(
-    strlen($hello)==13,
-    'String length is 13'
-);
-
-// Display the results; not MVC but let's keep it simple
-foreach ($test->results() as $result) {
-    echo $result['text'].'<br>';
-    if ($result['status'])
-        echo 'Pass';
-    else
-        echo 'Fail ('.$result['source'].')';
-    echo '<br>';
-}
-	
+$event_array = array('totalpages'=>1,'currpage'=>1,'totalrecords'=>$event_count,'eventdata'=>array());
+foreach ($events as $eventnum=>$event) {
+	//krumo($event);
+		$event_array['eventdata'][] = array('id'=>$event->id,'event_name'=>$event->event_name,'event_date'=>$event->event_date,'event_contact_email'=>$event-> event_contact_email,
+			'event_limit'=>$event->event_limit,'event_current_count'=>$event->event_current_count,'event_full'=>$event->event_full);
+	//	$event_array['eventdata'][] = array('id'=>$event->id,'cell'=>array($event->event_name,$event->event_date,$event-> event_contact_email));
+		
+		}
+	krumo($event_array);	
+	krumo(json_encode($event_array));
 }
 
 /***************** Unused TESTS *******************/

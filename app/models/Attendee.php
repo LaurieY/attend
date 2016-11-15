@@ -15,6 +15,34 @@ function all() {
 		
         return $this->query;
     }
+	
+function get_tree($event_id) {
+	$fw=Base::instance();
+	require_once 'krumo/class.krumo.php'; 
+/*************  some code to identify the number of sub attendees per requester_id
+*************	might not be needed yet
+***********************************
+$this-$this->rcount = "count(*)";
+	$r2 = $this->select('count(*) as rcount, requester_id' ,array('event_id='.$event_id),array('group'=>'requester_id'));
+	krumo($this->db->log());
+	foreach($r2 as $anr2) {
+		if($anr2->requester_id >0) 	{	krumo('rid= '.$anr2->requester_id);		krumo('  '.($anr2->rcount)+1);}
+	}
+	************/
+	$this->level="if(requester_id>0, 1,0)";
+	$this->isLeaf='if(requester_id=0, "false","true")';
+	$r1=$this->find(array('event_id=?',$event_id),array('order'=>'id ASC'));
+	foreach ($r1 as $anattendee) {
+/**	krumo('id= '	.$anattendee->id);
+	krumo(	$anattendee->name);
+	krumo('requester_id= '.	$anattendee->requester_id);
+	krumo('level = '.	$anattendee->level);
+	krumo('isLeaf = '.	$anattendee->isLeaf);**/
+		}
+	//krumo($this->query);
+	return $r1;
+	
+}
 function add($attendee,$comment,$event_info,$requester_id,$request_over_limit) {
 	//krumo($request_over_limit);
 		$fw=Base::instance();
@@ -72,7 +100,9 @@ function add($attendee,$comment,$event_info,$requester_id,$request_over_limit) {
 
 		$resp = $this->save();
 		if($requester_id==0) { // this was the requester entry so add its own id into the record
-							$this->requester_id  =$this->id;
+							//$this->requester_id  =$this->id;
+							// no leave it as 0 for the hierarchy search
+							$this->requester_id =0;
 							$this->save();
 							}		
 		return(array('added',$this->id,$this->request_status));

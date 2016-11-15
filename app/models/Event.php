@@ -14,7 +14,7 @@ function future() {
 		
         return $this->query;
     }
-		public function past() {
+function past() {
  
 	   $fw=Base::instance();
 		//var_dump($fw);// need to filter by current u3ayear

@@ -5,7 +5,7 @@ class AttendanceAjaxController extends Controller {
 	private $u3ayear;
 	function afterroute() { // allows simple non views activities
 	}
-	function beforeroute() {
+function beforeroute() {
 //$f3->set('message','');
 	$f3=$this->f3;
 	$auth_logger = new MyLog('auth.log');
@@ -15,7 +15,7 @@ class AttendanceAjaxController extends Controller {
 	if($this->u3ayear =='') {$options->initu3ayear();		
 	$this->u3ayear = $f3->get('SESSION.u3ayear');}
 	}
-public function attendance_list() {
+	function attendance_list() {
 	$f3=Base::instance();
 	$uselog=$f3->get('uselog');
 	$check_logger = new MyLog('attendance.log');
@@ -549,7 +549,283 @@ function get_event_info(){
 	echo json_encode($event_info);
 	
 }
+function event_grid() {
+//require_once 'krumo/class.krumo.php'; 	
+	$f3=Base::instance();
+	$event = new Event($this->db);		
+/******$json1= '{   "total": "xxx", 
+  "page": "yyy", 
+  "records": "zzz",
+  "rows" : [
+    {"id" :"1", "cell" :["cell11", "cell12", "cell13"]},
+    {"id" :"2", "cell":["cell21", "cell22", "cell23"]}  ]}';	
+//krumo( $json1);
+//echo '<br>';
+ //krumo(json_decode($json1,true));
+$json2= '{   "totalpages" : 1, 
+  "currpage" : 1,
+  "totalrecords" : 84,
+  "eventdata" : [    {"id" : "1","event_name":"cell11", "event_date" :"cell12", "event_contact_email" :"cell13"},
+    {"id" : "2","event_name":"cell21", "event_date" :"cell22", "event_contact_email" :"cell23"} ]}';
+  //krumo($json2);
+ // echo '<br>';
+ // krumo(json_decode($json2,true));
+ //$this->event->load(array('event_id=?',$this->event_info['event_id']));
+ 
+ //krumo($this->event->event_name);
+ *******/
+ $event_count= $event->count(array('active = "Y"'));
+//	krumo($event_count);
+$events=$event->find(array(	'active = "Y"'), array('order'=>'event_current_count DESC , event_date ASC'));
 
-
+$event_array = array('totalpages'=>1,'currpage'=>1,'totalrecords'=>$event_count,'eventdata'=>array());
+foreach ($events as $eventnum=>$anevent) {
+	//krumo($event);
+		$event_array['eventdata'][] = array('id'=>$anevent->event_id,'event_name'=>$anevent->event_name,'event_date'=>$anevent->event_date,'event_contact_email'=>$anevent-> event_contact_email,
+			'event_limit'=>$anevent->event_limit,'event_current_count'=>$anevent->event_current_count,'event_full'=>$anevent->event_full);
+	//	$event_array['eventdata'][] = array('id'=>$event->id,'cell'=>array($event->event_name,$event->event_date,$event-> event_contact_email));
+		
+		}
+	//krumo($event_array);	
+//	krumo(json_encode($event_array));
+	echo json_encode($event_array);
 }
+function attendee_grid() {
+//require_once 'krumo/class.krumo.php'; 	
+	$f3=Base::instance();
+	$uselog=$f3->get('uselog');
+	$attendee_logger = new MyLog('attendee.log');
+	$attendee_logger->write('in fn attendee_grid #598 PARAMS= '.var_export($f3->get('PARAMS'),true),$uselog);
+	$attendee = new Attendee($this->db);		
+ 	$event_id = $f3->get('PARAMS.eventid');
+	$attendee_logger->write('in fn attendee_grid #601 PARAMS.eventid = '.var_export($f3->get('PARAMS.eventid'),true),$uselog);
+
+ $attendee_count= $attendee->count(array('event_id=?',$event_id));
+//	krumo($event_count);
+$attendees=$attendee->find(array('event_id=?',$event_id));
+
+$attendee_array = array('totalpages'=>1,'currpage'=>1,'totalrecords'=>$attendee_count,'attendeedata'=>array());
+foreach ($attendees as $attendeenum=>$anattendee) {
+	//krumo($event);
+		$attendee_array['attendeedata'][] = array('id'=>$anattendee->id,'name'=>$anattendee->name,'membnum'=>$anattendee->membnum,'member_paid'=>$anattendee-> member_paid,
+			'member_guest'=>$anattendee->member_guest,'requester_email'=>$anattendee->requester_email,'request_status'=>$anattendee->request_status,
+			'request_comment'=>$anattendee->request_comment,'created_at'=>$anattendee->created_at);
+	//	$event_array['eventdata'][] = array('id'=>$event->id,'cell'=>array($event->event_name,$event->event_date,$event-> event_contact_email));
+		
+		}
+	//krumo($event_array);	
+//	krumo(json_encode($event_array));
+	echo json_encode($attendee_array);
+}
+function fiddle(){
+	require_once 'krumo/class.krumo.php'; 
+	$empl = '{	"rows":[
+		{"emp_id":"10","name":"Albert","salary":"1000.00","boss_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"true"},
+		{"emp_id":"11","name":"Bert","salary":"900.00","boss_id":"10","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"emp_id":"12","name":"Chuck","salary":"900.00","boss_id":"10","level":1,"isLeaf":"false","loaded":"true","expanded":"true"},
+		{"emp_id":"13","name":"Donna","salary":"800.00","boss_id":"12","level":2,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"emp_id":"14","name":"Eddie","salary":"700.00","boss_id":"12","level":2,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"emp_id":"15","name":"Fred","salary":"600.00","boss_id":"12","level":2,"isLeaf":"true","loaded":"true","expanded":"true"}
+	],
+	"total":6,
+	"page":1
+	}';
+	krumo($empl);
+	echo '<br>';
+	krumo(json_decode($empl,true));	
+	$emp2 = '{	"rows":[
+		{"id":"10","name":"Albert","member_guest":"M","requester_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"true"},
+		{"id":"11","name":"Bert","member_guest":"G","requester_id":"10","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"id":"12","name":"Chuck","member_guest":"G","requester_id":"10","level":1,"isLeaf":"false","loaded":"true","expanded":"true"},
+		{"id":"13","name":"Donna","member_guest":"M","requester_id":"12","level":0,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"id":"14","name":"Eddie","member_guest":"G","requester_id":"13","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"id":"15","name":"Fred","member_guest":"G","requester_id":"13","level":1,"isLeaf":"true","loaded":"true","expanded":"true"}
+	],
+	"total":6,
+	"page":1
+	}';	
+	echo '<br>';
+	krumo(json_decode($emp2,true));	
+	$attendee = new Attendee($this->db);		
+	krumo($attendee->get_tree(99999));
+}
+function data_json2() {
+/***		$emp2 = '{	"rows":[
+		{"id":"10","name":"Albert","member_guest":"M","requester_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"true"},
+		{"id":"11","name":"Bert","member_guest":"G","requester_id":"10","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"id":"12","name":"Chuck","member_guest":"G","requester_id":"10","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"id":"13","name":"Donna","member_guest":"M","requester_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"true"},
+		{"id":"14","name":"Eddie","member_guest":"G","requester_id":"13","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"id":"15","name":"Fred","member_guest":"G","requester_id":"13","level":1,"isLeaf":"true","loaded":"true","expanded":"true"}
+	],
+	"total":6,
+	"page":1
+	}';  ***/
+	 $f3=$this->f3;
+	$uselog=$f3->get('uselog');
+	$attendee_logger = new MyLog('attendee.log');
+	$attendee_logger->write('in fn data_json2 #667 PARAMS= '.var_export($emp2,true),$uselog);
+	$event_id = $f3->get('PARAMS.eventid');
+$attendee = new Attendee($this->db);	
+$att2 =$attendee->get_tree($event_id) 	;
+$attendee_array = array('pages'=>1,'currpage'=>1,'total'=>count($att2),'rows'=>array());
+foreach ($att2 as $anattendee) {
+	//krumo($event);
+		$attendee_array['rows'][] = array('id'=>$anattendee->id,'name'=>$anattendee->name,'membnum'=>$anattendee->membnum,'member_paid'=>$anattendee-> member_paid,
+			'member_guest'=>$anattendee->member_guest,'requester_id'=>$anattendee->requester_id,
+			'requester_email'=>$anattendee->requester_email,'request_status'=>$anattendee->request_status,
+			'request_comment'=>$anattendee->request_comment,'created_at'=>$anattendee->created_at, 'level'=>$anattendee->level, 'isLeaf'=>$anattendee->isLeaf,"loaded"=>"true","expanded"=>"true");
+	//	$event_array['eventdata'][] = array('id'=>$event->id,'cell'=>array($event->event_name,$event->event_date,$event-> event_contact_email));
+		
+		}
+		//	$attendee_logger->write('in fn data_json2 #679 PARAMS= '.var_export($attendee_array,true),$uselog);
+				$attendee_logger->write('in fn data_json2 #680 PARAMS= '.var_export(json_encode($attendee_array),true),$uselog);
+		echo json_encode($attendee_array);
+}
+function data_json() {
+	echo '{	"rows":[
+		{"emp_id":"10","name":"Albert","salary":"1000.00","boss_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"true"},
+		{"emp_id":"11","name":"Bert","salary":"900.00","boss_id":"10","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"emp_id":"12","name":"Chuck","salary":"900.00","boss_id":"10","level":1,"isLeaf":"false","loaded":"true","expanded":"true"},
+		{"emp_id":"13","name":"Donna","salary":"800.00","boss_id":"12","level":2,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"emp_id":"14","name":"Eddie","salary":"700.00","boss_id":"12","level":2,"isLeaf":"true","loaded":"true","expanded":"true"},
+		{"emp_id":"15","name":"Fred","salary":"600.00","boss_id":"12","level":2,"isLeaf":"true","loaded":"true","expanded":"true"}
+	],
+	"total":6,
+	"page":1
+	}';
+}
+function xml_events() {
+		 
+	 $f3=$this->f3;
+		 $members =	new Event($this->db);
+	 $uselog=$f3->get('uselog');
 	
+	 $attendee_logger = new MyLog('attendee.log');
+	$attendee_logger->write('in fn events #559 u3ayear='.$f3->get('SESSION.u3ayear'),$uselog);
+	 $f3->set('page_head','User List');
+$attendee_logger->write('in fn events #561 GET._search='.$f3->get('GET._search'),$uselog);
+if ($f3->get('GET._search')=='true'){ 
+// set up filters
+$filters = $f3->get('GET.filters');
+$attendee_logger->write('in fn events filters= '.$filters,$uselog);
+
+$where = "";
+ 
+$attendee_logger->write('in fn events where= '.$where,$uselog);
+	$f3->set('SESSION.lastseen',time()); 
+	/**********************  Now get the resulting xml via SWL using this where selection ******/
+	$whh =	$this->getresult_where($where);
+	
+	$attendee_logger->write('in fn events #574where result = '.$whh."\n");
+echo $whh;
+	}
+	else {
+//$u3ayear = $f3->get('SESSION.u3ayear');
+$attendee_logger->write("in fn events where result #579 " ,$uselog);
+$res1 =$this->getresult_where("where active='Y'");
+$attendee_logger->write("in fn events where result #581 , res1=".var_export($res1,true) ,$uselog);
+echo $res1;
+} 
+}
+function getresult_where( $where_to_use){
+
+ $f3=$this->f3;
+  $attendee_logger = new MyLog('attendee.log');
+$uselog=$f3->get('uselog');
+  $attendee_logger->write('in getresult_where #590 $where_to_use = '.$where_to_use,$uselog);
+header("Content-type: text/xml;charset=utf-8");
+ $page = $_GET['page']; 
+  
+	$sidx = $_GET['sidx']; 
+	$sord = $_GET['sord']; 
+	 $attendee_logger->write('in getresult_where #596 $sidx = '.$sidx.' $sord= '.$sord,$uselog);
+	$extrasort = ', event_date ASC';
+ //$fred = $f3->get('db_user');
+	$db = mysqli_connect('localhost', $f3->get('db_user'),  $f3->get('db_pass'),$f3->get('db_name')) or die("Connection Error: " . mysql_error()); 
+$attendee_logger->write('in getresult_where #600 ',$uselog);
+ // calculate the number of rows for the query. We need this for paging the result 
+	$result = mysqli_query($db,"SELECT COUNT(*) AS count FROM events ".$where_to_use); 
+	$attendee_logger->write('in getresult_where #603 '.var_export($result,true),$uselog);
+	$row = mysqli_fetch_array($result,MYSQL_ASSOC); 
+	$count = $row['count']; 
+	$limit = $count;  // temporary force all rows
+//  $limit = $_GET['rows'];  // temporary comment out  to force all rows need this if non-local grid, i.e. loadOnce=false
+
+// calculate the total pages for the query 
+	if( $count > 0 && $limit > 0) { 
+				$total_pages = ceil($count/$limit); 
+	} else { 
+              $total_pages = 0; 
+	} 
+
+// if for some reasons the requested page is greater than the total 
+// set the requested page to total page 
+	if ($page > $total_pages) $page=$total_pages;
+ 
+// calculate the starting position of the rows 
+	$start = $limit*$page - $limit;
+ 
+// if for some reasons start position is negative set it to 0 
+// typical case is that the user type 0 for the requested page 
+	if($start <0) $start = 0; 
+ 
+
+ // the actual query for the grid data 
+ // Fetch extra columns to allow for the icons columns in the events grid
+// $SQL = "SELECT id,surname ,forename,membnum ,phone,mobile,email,membtype,location,paidthisyear,amtpaidthisyear,feewhere,fyear,u3ayear,3,datejoined FROM members  ".$where_to_use." ORDER BY $sidx $sord ". $extrasort. " LIMIT $start , $limit"; 
+ $SQL = "SELECT id,event_name,event_date ,event_contact_email,event_limit,event_current_count,event_full,3 FROM events  ".$where_to_use." ORDER BY $sidx $sord ". $extrasort. " LIMIT $start , $limit"; 
+
+ 
+ 
+ $attendee_logger->write('in getresult_where SQL = '. $SQL."\n",$uselog);
+ $result = mysqli_query( $db,$SQL ) or die("Couldn't execute query.".mysql_error()); 
+$s = "<?xml version='1.0' encoding='utf-8'?>";
+$s .=  "<rows>";
+$s .= "<page>".$page."</page>";
+$s .= "<total>".$total_pages."</total>";
+$s .= "<records>".$count."</records>";
+
+$s .= '<userdata name="forename">Total LastFY</userdata>';   # name = target column's name
+$s .= '<userdata name="phone">'.$amt_total_lastfy.'</userdata>'; 
+$s .= '<userdata name="email">Total ThisFY</userdata>';   # name = target column's name
+$s .= '<userdata name="location">'.$amt_total_thisfy.'</userdata>'; 
+   
+ 
+// be sure to put text data in CDATA
+/*
+while($row = mysql_fetch_array($result,MYSQL_ASSOC)) {
+    $s .= "<row id='". $row['id']."'>";  
+	
+    $s .= "<cell>". $row['surname']."</cell>"; 
+	$s .= "<cell>". $row['forename']."</cell>";
+	$s .= "<cell>". $row['membnum']."</cell>"; 	
+   // $s .= "<cell>". $row['mobile']."</cell>";
+	//$s .= "<cell>". $row['phone']."</cell>";
+	//$s .= "<cell>". $row['email']."</cell>";
+    $s .= "</row>";
+}  
+*/
+ while($row = mysqli_fetch_array($result,MYSQL_ASSOC)) {
+   foreach($row as $key => $value)
+      {if ($key=='id') {$s .= "<row id='". $value."'>";  }
+	  else
+	  { $s .= "<cell>". "$value"."</cell>";
+	  
+	  }
+         //$key holds the table column name
+       
+   
+   }
+$s .= "</row>"; 
+	
+	} 
+$s .= "</rows>"; 
+
+//$attendee_logger->write('in getresult_where #415 result = '.$s,$uselog);
+	return $s;
+
+	
+}
+}
+ 

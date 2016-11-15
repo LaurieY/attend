@@ -53,8 +53,8 @@ function beforeroute() {
 	$auth_logger->write( 'Exiting beforeroute URI= '.$f3->get('URI'  ));
 	$auth_logger->write( 'Exiting beforeroute page_head set to = '.$f3->get('page_head'  ));		
 	}
-	function check_cookie()
-{$auth_logger = new MyLog('auth.log');
+function check_cookie(){
+$auth_logger = new MyLog('auth.log');
 $f3=$this->f3;
 	$auth_logger->write( 'Entering check_cookie URI= '.$f3->get('URI'  ) );
 	
@@ -70,7 +70,7 @@ $f3=$this->f3;
 $auth_logger->write( 'check_cookie isset outer' );
     return TRUE;
 }
-public function index () {
+function index () {
 	$f3=$this->f3;
 	$uselog=$f3->get('uselog');
 	$auth_logger = new MyLog('auth.log');
@@ -94,13 +94,15 @@ public function index () {
 
 	 // $f3->set('listnn','member/list.htm');
 	$f3->set('view','event/list.htm');
-		if($f3->get('SESSION.user_role') =='register') 	{$f3->set('view','attendance/list.htm'); $f3->set('page_head',"Member Attendance List ");}
+		$auth_logger->write( 'In attendanceController index #97 with SESSION.user_role = '.$f3->get('SESSION.user_role'),$uselog  );	 
+	$user_role = $f3->get('SESSION.user_role');
+		if(($user_role =='register') or ($user_role =='admin'))	{$f3->set('view','event/list.htm'); $f3->set('page_head',"Member Attendance List ");}
 		$f3->set('SESSION.lastseen',time()); 
-			$auth_logger->write( 'In attendanceController index #98 with u3ayear = '.$f3->get('SESSION.u3ayear'),$uselog  );
+			$auth_logger->write( 'In attendanceController index #101 with u3ayear = '.$f3->get('SESSION.u3ayear'),$uselog  );
 	
 }
 
-	public function attendance_list2() {	
+function attendance_list2() {	
 	$f3=Base::instance();
 	$uselog=$f3->get('uselog');
 	$check_logger = new MyLog('attendance.log');
@@ -114,7 +116,7 @@ public function index () {
 	$f3->set('view','attendance/list.htm'); 
 	$f3->set('page_head',"Member Attendance List ");
 }
-public function attendance_list_name() {
+function attendance_list_name() {
 	$f3=Base::instance();
 	$uselog=$f3->get('uselog');
 	$check_logger = new MyLog('attendance.log');

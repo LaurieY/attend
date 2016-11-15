@@ -16,7 +16,13 @@ $f3->route('GET /usergrid [ajax]','AjaxController->users');
 $f3->route('POST /edituser [ajax]','AjaxController->edituser');
 
 $f3->route('GET /attend','AttendanceController->index');
-$f3->route('GET /membergrid [ajax]','AjaxController->members');
+$f3->route('GET /eventgrid [ajax]','AttendanceAjaxController->event_grid');
+$f3->route('GET /app/views/attendeegrid/@eventid [ajax]','AttendanceAjaxController->attendee_grid');
+$f3->route('GET /app/views/data.json [ajax]','AttendanceAjaxController->data_json');
+$f3->route('GET /app/views/data.json2/@eventid [ajax]','AttendanceAjaxController->data_json2');
+$f3->route('GET /eventfiddle','AttendanceAjaxController->fiddle');
+
+
 $f3->route('GET /payments','MemberController->payments'); 
 $f3->route('GET /wherefees','MemberController->wherearefees'); 
 $f3->route('GET /wherefeesgrid [ajax]','AjaxController->wherefeesgrid');
@@ -163,10 +169,11 @@ $f3->route('GET /geteventinfo/@id','AttendanceAjaxController->get_event_info');
 
 $f3->route('GET /do_daily1','AttendanceAjaxController->do_daily1');
 
-$f3->route('GET /unithello','TestController->unithello');
+
 $f3->route('GET /unitattend/@test','TestController->unitattend');
 $f3->route('GET /unitattend1','TestController->unitattend1');
 
+$f3->route('GET /fiddle','TestController->fiddle');
 
 
 $f3->run();
