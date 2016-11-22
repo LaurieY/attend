@@ -70,7 +70,7 @@ $f3=$this->f3;
 $auth_logger->write( 'check_cookie isset outer' );
     return TRUE;
 }
-function index () {
+function index () { // show event grid and treegrid of attendees
 	$f3=$this->f3;
 	$uselog=$f3->get('uselog');
 	$auth_logger = new MyLog('auth.log');
@@ -99,6 +99,68 @@ function index () {
 		if(($user_role =='register') or ($user_role =='admin'))	{$f3->set('view','event/list.htm'); $f3->set('page_head',"Member Attendance List ");}
 		$f3->set('SESSION.lastseen',time()); 
 			$auth_logger->write( 'In attendanceController index #101 with u3ayear = '.$f3->get('SESSION.u3ayear'),$uselog  );
+	
+}
+function index2 () { // show event grid and indented of attendees
+	$f3=$this->f3;
+	$uselog=$f3->get('uselog');
+	$auth_logger = new MyLog('auth.log');
+	$auth_logger->write( 'Entering AttendanceController index2'  );	  
+	$options= new Option($this->db);
+		$options->initu3ayear();
+		$options->initlastu3ayear();
+		//$options->initmjl1start();
+		$options->initemailsettings();
+		$event = new Event($this->db);
+		$attendee = new Attendee($this->db);
+		$f3->set('event',$event->future());
+        $f3->set('attendee',$attendee->all());  //LEY is this needed
+		$auth_logger->write( 'In attendanceController index2 #118 with u3ayear = '.$f3->get('SESSION.u3ayear'),$uselog  );	 
+		$auth_logger->write( 'In attendanceController index2 #119 with role = '.$f3->get('SESSION.user_role'),$uselog  );	 
+		$f3->set('page_head',"Event List ".$f3->get('SESSION.u3ayear'));
+		$f3->set('page_role',$f3->get('SESSION.user_role'));
+        $f3->set('message', $f3->get('PARAMS.message'));
+		//$f3->set('listn', $f3->get('PARAMS.mylist'));
+
+
+	 // $f3->set('listnn','member/list.htm');
+	$f3->set('view','event/list2.htm');
+		$auth_logger->write( 'In attendanceController index #97 with SESSION.user_role = '.$f3->get('SESSION.user_role'),$uselog  );	 
+	$user_role = $f3->get('SESSION.user_role');
+		if(($user_role =='register') or ($user_role =='admin'))	{$f3->set('view','event/list2.htm'); $f3->set('page_head',"Member Attendance List ");}
+		$f3->set('SESSION.lastseen',time()); 
+			$auth_logger->write( 'In attendanceController index #101 with u3ayear = '.$f3->get('SESSION.u3ayear'),$uselog  );
+	
+}
+function index3 () {  //Show 3 grids
+	$f3=$this->f3;
+	$uselog=$f3->get('uselog');
+	$auth_logger = new MyLog('auth.log');
+	$auth_logger->write( 'Entering AttendanceController index'  );	  
+	$options= new Option($this->db);
+		$options->initu3ayear();
+		$options->initlastu3ayear();
+		//$options->initmjl1start();
+		$options->initemailsettings();
+		$event = new Event($this->db);
+		$attendee = new Attendee($this->db);
+		$f3->set('event',$event->future());
+        $f3->set('attendee',$attendee->all());  //LEY is this needed
+		$auth_logger->write( 'In attendanceController index #118 with u3ayear = '.$f3->get('SESSION.u3ayear'),$uselog  );	 
+		$auth_logger->write( 'In attendanceController index #119 with role = '.$f3->get('SESSION.user_role'),$uselog  );	 
+		$f3->set('page_head',"Event List ".$f3->get('SESSION.u3ayear'));
+		$f3->set('page_role',$f3->get('SESSION.user_role'));
+        $f3->set('message', $f3->get('PARAMS.message'));
+		//$f3->set('listn', $f3->get('PARAMS.mylist'));
+
+
+	 // $f3->set('listnn','member/list.htm');
+	$f3->set('view','event3/list.htm');
+		$auth_logger->write( 'In attendanceController index #127 with SESSION.user_role = '.$f3->get('SESSION.user_role'),$uselog  );	 
+	$user_role = $f3->get('SESSION.user_role');
+		if(($user_role =='register') or ($user_role =='admin'))	{$f3->set('view','event/list3.htm'); $f3->set('page_head',"Member Attendance List-3 ");}
+		$f3->set('SESSION.lastseen',time()); 
+			$auth_logger->write( 'In attendanceController index #132 with u3ayear = '.$f3->get('SESSION.u3ayear'),$uselog  );
 	
 }
 

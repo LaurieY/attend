@@ -182,7 +182,7 @@ function do_daily1($daily_array) {
 			$an_event['event_type']= explode("pods",$an_event['event_type'])[1] ;
 						//
 			$an_event['active']='Y';	
-	$api_logger->write( 'do_daily1 #204 '.var_export($an_event,true),$uselog  );			
+	//$api_logger->write( 'do_daily1 #204 '.var_export($an_event,true),$uselog  );			
 			$resp=$this->add_event($an_event);
 			//update the tally of changes
 				switch ($resp) {
@@ -408,7 +408,7 @@ function addattend() {
 	$attendees_ok= $this->add_attendees($persons, $comment,$event_info);
 	//krumo($attendees_ok);
 	/************ Add people_count to the event record	event_current_count ***************/
-	$api_logger->write( ' #402 in addattend with attendees_ok response = '.var_export($attendees_ok,true),$uselog);
+	$api_logger->write( ' #411 in addattend with attendees_ok response = '.var_export($attendees_ok,true),$uselog);
 //return($attendees_ok['response']); return;
 		$event_id = $event_info['event_id'];
 		if(!$attendees_ok['ok']) return $attendees_ok['response'];
@@ -458,25 +458,32 @@ function add_attendees($attendees,$comment_ary, $event_info) {
 	
 	foreach($attendees as $akey=>$person) {
 		if($akey ==0) 	$person['requester'] = true;
-		//krumo($person);
-		/** add with the person details together with the event id and event date as keys  ***/
-		/**** check that the person hasn't already been added for that event, if it has just not add again but remember that and email it ***/
+		else
+			$person['requester'] = false; 
+			//krumo($person);
+			/** add with the person details together with the event id and event date as keys  ***/
+			/**** check that the person hasn't already been added for that event, if it has just not add again but remember that and email it ***/
 			$attendee = new Attendee($this->db);
 			$person['email'] = $requester_email;
 			$api_logger->write( 'Adding attendees #435 with requester_id '.$requester_id,$uselog  );$api_logger->write( 'Adding attendees #424 with akey'.$akey,$uselog  );
-		//die();
-		$resp =$attendee->add($person,$comment,$event_info,$requester_id,$request_over_limit);
-	//	krumo($resp);
+				//die();
+			$resp =$attendee->add($person,$comment,$event_info,$requester_id,$request_over_limit);
+			//	krumo($resp);
 			$api_logger->write( 'Adding attendees #437 with response '.var_export($resp,true),$uselog  );	
 			// $resp[0] is of the form Updated, Existed, Added
 			$attendee_responses[] =array('name'=>$person['name'],'response'=>$resp[0], 'id'=>$resp[1],'request_status'=>$resp[2]);
-				if($akey ==0) { 
+			if($akey ==0) { 
 				//its the requester, the first person so remember the id that has been returned for  any other persons to be inserted into the attendees entries
 				$requester_id = $resp[1];
 
 				}
 
 			}
+		// Now update requested count for the requester
+$api_logger->write( 'Adding attendees #483 with requester '.var_export($attendees[0],true),$uselog  );
+		$attendee = new Attendee($this->db);
+		$r3=$attendee->update_count($attendees[0],$event_info);	
+$api_logger->write( 'Adding attendees #486 with r3 = '.var_export($r3,true),$uselog  );	
 /***********************************************************************************************************
 **********	 At this point we have received an array of array responses 'name' & 'response' ****************
 **********	 The overall status of the request would be either 'Booked' or 'Waitlisted'		****************	
@@ -590,6 +597,40 @@ foreach ($events as $eventnum=>$anevent) {
 //	krumo(json_encode($event_array));
 	echo json_encode($event_array);
 }
+// return json with requesters only for this event
+function requester_grid() {
+//require_once 'krumo/class.krumo.php'; 	
+	$f3=Base::instance();
+	$uselog=$f3->get('uselog');
+	$attendee_logger = new MyLog('attendee.log');
+	$attendee_logger->write('in fn requester_grid #599 PARAMS= '.var_export($f3->get('PARAMS'),true),$uselog);
+	$attendee = new Attendee($this->db);		
+ 	$event_id = $f3->get('PARAMS.eventid');
+	$attendee_logger->write('in fn requester_grid #602 PARAMS.eventid = '.var_export($f3->get('PARAMS.eventid'),true),$uselog);
+
+ //$attendee_count= $attendee->count(array('requester_id=0 and event_id=?',$event_id));
+ $attendee_count= $attendee->count(array('requester_id=id and event_id=?',$event_id));
+//	krumo($event_count);
+//fetch the requester name for each request
+//then fetch the count of each reuqest by grouping on requester id 
+//$attendees=$attendee->find(array('requester_id=0 and event_id=?',$event_id));
+$attendees=$attendee->find(array('requester_id=id and event_id=?',$event_id));
+
+$attendee_array = array('totalpages'=>1,'currpage'=>1,'totalrecords'=>$attendee_count,'attendeedata'=>array());
+foreach ($attendees as $attendeenum=>$anattendee) {
+	//krumo($event);
+	$num_requested = 
+		$attendee_array['attendeedata'][] = array('id'=>$anattendee->id,'name'=>$anattendee->name,'membnum'=>$anattendee->membnum,'member_paid'=>$anattendee-> member_paid,
+			'member_guest'=>$anattendee->member_guest,'requester_email'=>$anattendee->requester_email,'request_status'=>$anattendee->request_status,
+			//'number_requested'=>$anattendee->number_requested,
+			'created_at'=>$anattendee->created_at);
+	//	$event_array['eventdata'][] = array('id'=>$event->id,'cell'=>array($event->event_name,$event->event_date,$event-> event_contact_email));
+		
+		}
+	//krumo($event_array);	
+//	krumo(json_encode($event_array));
+	echo json_encode($attendee_array);	
+}
 function attendee_grid() {
 //require_once 'krumo/class.krumo.php'; 	
 	$f3=Base::instance();
@@ -604,6 +645,65 @@ function attendee_grid() {
 //	krumo($event_count);
 $attendees=$attendee->find(array('event_id=?',$event_id));
 
+$attendee_array = array('totalpages'=>1,'currpage'=>1,'totalrecords'=>$attendee_count,'attendeedata'=>array());
+foreach ($attendees as $attendeenum=>$anattendee) {
+	//krumo($event);
+		$attendee_array['attendeedata'][] = array('id'=>$anattendee->id,'name'=>$anattendee->name,'membnum'=>$anattendee->membnum,'member_paid'=>$anattendee-> member_paid,
+			'member_guest'=>$anattendee->member_guest,'requester_email'=>$anattendee->requester_email,'request_status'=>$anattendee->request_status,
+			'request_comment'=>$anattendee->request_comment,'created_at'=>$anattendee->created_at);
+	//	$event_array['eventdata'][] = array('id'=>$event->id,'cell'=>array($event->event_name,$event->event_date,$event-> event_contact_email));
+		
+		}
+	//krumo($event_array);	
+//	krumo(json_encode($event_array));
+	echo json_encode($attendee_array);
+}
+function attendee_grid2() { // returns the attendees including the requester
+//require_once 'krumo/class.krumo.php'; 	
+	$f3=Base::instance();
+	$uselog=$f3->get('uselog');
+	$attendee_logger = new MyLog('attendee.log');
+	$attendee_logger->write('in fn attendee_grid3 #657 PARAMS= '.var_export($f3->get('PARAMS'),true),$uselog);
+	$attendee = new Attendee($this->db);		
+ 	$event_id = $f3->get('PARAMS.eventid');
+//	$attendee_logger->write('in fn attendee_grid #660 PARAMS.requesterid = '.var_export($f3->get('PARAMS.requesterid '),true),$uselog);
+	$attendee_logger->write('in fn attendee_grid #665 PARAMS.event = '.var_export($event_id,true),$uselog);
+$attendee_count= $attendee->count(array('event_id=?',$event_id));
+ // $attendee_count= $attendee->count(array('requester<> 1 and requester_id=?',$requester_id));
+	$attendee_logger->write('in fn attendee_grid #668 attendee_count = '.var_export($attendee_count,true),$uselog);
+//$attendees=$attendee->find(array('requester<> 1 and requester_id=?',$requester_id));
+$attendees=$attendee->find(array('event_id=?',$event_id),array('order','requester_id ASC'));
+$attendee_array = array('totalpages'=>1,'currpage'=>1,'totalrecords'=>$attendee_count,'attendeedata'=>array());
+foreach ($attendees as $attendeenum=>$anattendee) {
+	//krumo($event);
+	if($anattendee->id !=$anattendee->requester_id)  $aname='---'.$anattendee->name;
+	else $aname=$anattendee->name;
+		$attendee_array['attendeedata'][] = array('id'=>$anattendee->id,'name'=>$aname,'membnum'=>$anattendee->membnum,'member_paid'=>$anattendee-> member_paid,
+			'member_guest'=>$anattendee->member_guest,'requester_email'=>$anattendee->requester_email,
+			'request_status'=>$anattendee->request_status,'request_count'=>$anattendee->request_count,
+			'request_comment'=>$anattendee->request_comment,'created_at'=>$anattendee->created_at);
+	//	$event_array['eventdata'][] = array('id'=>$event->id,'cell'=>array($event->event_name,$event->event_date,$event-> event_contact_email));
+		
+		}
+	//krumo($event_array);	
+//	krumo(json_encode($event_array));
+	echo json_encode($attendee_array);
+}
+function attendee_grid3() { // returns the attendees minus the requester
+//require_once 'krumo/class.krumo.php'; 	
+	$f3=Base::instance();
+	$uselog=$f3->get('uselog');
+	$attendee_logger = new MyLog('attendee.log');
+	$attendee_logger->write('in fn attendee_grid3 #657 PARAMS= '.var_export($f3->get('PARAMS'),true),$uselog);
+	$attendee = new Attendee($this->db);		
+ 	$requester_id = $f3->get('PARAMS.requesterid');
+//	$attendee_logger->write('in fn attendee_grid #660 PARAMS.requesterid = '.var_export($f3->get('PARAMS.requesterid '),true),$uselog);
+	$attendee_logger->write('in fn attendee_grid #661 PARAMS.requesterid = '.var_export($requester_id,true),$uselog);
+ //$attendee_count= $attendee->count(array('requester_id=?',$requester_id));
+ $attendee_count= $attendee->count(array('requester<> 1 and requester_id=?',$requester_id));
+	$attendee_logger->write('in fn attendee_grid #663 attendee_count = '.var_export($attendee_count,true),$uselog);
+$attendees=$attendee->find(array('requester<> 1 and requester_id=?',$requester_id));
+//$attendees=$attendee->find(array('requester_id=?',$requester_id));
 $attendee_array = array('totalpages'=>1,'currpage'=>1,'totalrecords'=>$attendee_count,'attendeedata'=>array());
 foreach ($attendees as $attendeenum=>$anattendee) {
 	//krumo($event);
@@ -649,9 +749,9 @@ function fiddle(){
 	$attendee = new Attendee($this->db);		
 	krumo($attendee->get_tree(99999));
 }
-function data_json2() {
-/***		$emp2 = '{	"rows":[
-		{"id":"10","name":"Albert","member_guest":"M","requester_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"true"},
+function data_json2() {  //for treegrid
+		$emp2 = '{	"rows":[
+		{"id":"10","name":"Albert","member_guest":"M","requester_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"false"},
 		{"id":"11","name":"Bert","member_guest":"G","requester_id":"10","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
 		{"id":"12","name":"Chuck","member_guest":"G","requester_id":"10","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
 		{"id":"13","name":"Donna","member_guest":"M","requester_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"true"},
@@ -660,7 +760,7 @@ function data_json2() {
 	],
 	"total":6,
 	"page":1
-	}';  ***/
+	}';  
 	 $f3=$this->f3;
 	$uselog=$f3->get('uselog');
 	$attendee_logger = new MyLog('attendee.log');
@@ -672,19 +772,28 @@ $attendee_array = array('pages'=>1,'currpage'=>1,'total'=>count($att2),'rows'=>a
 foreach ($att2 as $anattendee) {
 	//krumo($event);
 		$attendee_array['rows'][] = array('id'=>$anattendee->id,'name'=>$anattendee->name,'membnum'=>$anattendee->membnum,'member_paid'=>$anattendee-> member_paid,
-			'member_guest'=>$anattendee->member_guest,'requester_id'=>$anattendee->requester_id,
+			'member_guest'=>$anattendee->member_guest,'requester_id'=>(string)$anattendee->requester_id,
 			'requester_email'=>$anattendee->requester_email,'request_status'=>$anattendee->request_status,
-			'request_comment'=>$anattendee->request_comment,'created_at'=>$anattendee->created_at, 'level'=>$anattendee->level, 'isLeaf'=>$anattendee->isLeaf,"loaded"=>"true","expanded"=>"true");
+			'request_comment'=>$anattendee->request_comment,'created_at'=>$anattendee->created_at,
+			'level'=>intval($anattendee->level), 'isLeaf'=>$anattendee->isLeaf,"loaded"=>"true","expanded"=>"false");
 	//	$event_array['eventdata'][] = array('id'=>$event->id,'cell'=>array($event->event_name,$event->event_date,$event-> event_contact_email));
 		
 		}
 		//	$attendee_logger->write('in fn data_json2 #679 PARAMS= '.var_export($attendee_array,true),$uselog);
 				$attendee_logger->write('in fn data_json2 #680 PARAMS= '.var_export(json_encode($attendee_array),true),$uselog);
 		echo json_encode($attendee_array);
+		/**
+$emp3=	'{"total":5,"page":1,	"rows":[{"id":1677,"name":"Laurie Yates","membnum":180,"member_paid":null,"member_guest":"M","requester_id":"0","requester_email":"laurie@lyates.com","request_status":"Booked","request_comment":"ONE","created_at":"2016-11-15 17:58:47","level":0,"isLeaf":"false","loaded":"true","expanded":"false"},{"id":1678,"name":"Junior 1 Yates","membnum":null,"member_paid":null,"member_guest":"G","requester_id":"1677","requester_email":"laurie@lyates.com","request_status":"Booked","request_comment":"ONE","created_at":"2016-11-15 17:58:47","level":1,"isLeaf":"true","loaded":"true","expanded":"false"},
+{"id":1679,"name":"Susan Yates","membnum":181,"member_paid":null,"member_guest":"M","requester_id":0,"requester_email":"laurie@lyates.com","request_status":"Waitlisted","request_comment":"ONE","created_at":"2016-11-15 17:58:47","level":0,"isLeaf":"false","loaded":"true","expanded":"false"},
+{"id":1680,"name":"Junior 2 Yates","membnum":null,"member_paid":null,"member_guest":"G","requester_id":"1679","requester_email":"laurie@lyates.com","request_status":"Waitlisted","request_comment":"ONE","created_at":"2016-11-15 17:58:47","level":1,"isLeaf":"true","loaded":"true","expanded":"false"},
+{"id":1681,"name":"Susan Elizabeth Yates","membnum":1081,"member_paid":null,"member_guest":"M","requester_id":0,"requester_email":"laurie@lyates.com","request_status":"Waitlisted","request_comment":"ONE","created_at":"2016-11-15 17:58:47","level":0,"isLeaf":"false","loaded":"true","expanded":"false"}
+]
+	}';  **/
+		//echo $emp3;
 }
 function data_json() {
 	echo '{	"rows":[
-		{"emp_id":"10","name":"Albert","salary":"1000.00","boss_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"true"},
+		{"emp_id":"10","name":"Albert","salary":"1000.00","boss_id":null,"level":0,"isLeaf":"false","loaded":"true","expanded":"false"},
 		{"emp_id":"11","name":"Bert","salary":"900.00","boss_id":"10","level":1,"isLeaf":"true","loaded":"true","expanded":"true"},
 		{"emp_id":"12","name":"Chuck","salary":"900.00","boss_id":"10","level":1,"isLeaf":"false","loaded":"true","expanded":"true"},
 		{"emp_id":"13","name":"Donna","salary":"800.00","boss_id":"12","level":2,"isLeaf":"true","loaded":"true","expanded":"true"},

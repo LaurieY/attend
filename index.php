@@ -16,8 +16,13 @@ $f3->route('GET /usergrid [ajax]','AjaxController->users');
 $f3->route('POST /edituser [ajax]','AjaxController->edituser');
 
 $f3->route('GET /attend','AttendanceController->index');
+$f3->route('GET /attend2','AttendanceController->index2');
+$f3->route('GET /attend3','AttendanceController->index3');
 $f3->route('GET /eventgrid [ajax]','AttendanceAjaxController->event_grid');
 $f3->route('GET /app/views/attendeegrid/@eventid [ajax]','AttendanceAjaxController->attendee_grid');
+$f3->route('GET /app/views/attendeegrid2/@eventid [ajax]','AttendanceAjaxController->attendee_grid2');
+$f3->route('GET /app/views/attendeegrid3/@requesterid [ajax]','AttendanceAjaxController->attendee_grid3');
+$f3->route('GET /app/views/requestergrid/@eventid [ajax]','AttendanceAjaxController->requester_grid');
 $f3->route('GET /app/views/data.json [ajax]','AttendanceAjaxController->data_json');
 $f3->route('GET /app/views/data.json2/@eventid [ajax]','AttendanceAjaxController->data_json2');
 $f3->route('GET /eventfiddle','AttendanceAjaxController->fiddle');

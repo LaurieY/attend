@@ -1,122 +1,7 @@
 <script type="text/javascript">
 $(function () {
 // **************  functions for the custom elements in the add and edit forms for the feewhere element  **********
-/******
-function focusOther() {  $('input:radio[id=feewhere_other]').prop('checked', true);
- }
- window.focusOther = focusOther; //to allow testing from console
-function myelem (value, options) { 
-// var el = document.createElement("input");
- // el.type="radio";
- // el.value = value;
- // return el;
-//}
-var treaschecked =" ";
-var preschecked= " ";
-var otherchecked =" ";
-var bankchecked = " ";
-switch(value) {
-	case 'Treasurer':
-	case '':
-	treaschecked ='checked';
-	otherchecked =" ";
-	break;
-	case 'President':
-	preschecked	='checked';
-	break;
-	case 'Bank':
-	bankchecked	='checked';
-	break;
-	default:
-	otherchecked ="checked";
-	break;
-	
 
-}
-********/
-/************
-if (value=='Treasurer'||value=='' ) {
-treaschecked ='checked';
-otherchecked =" ";
-}
-else if(value=='President'){
-	preschecked	='checked';}
-		else {
-otherchecked ='checked';}
-********/
-
-
-//********  get current value of feewhere , if not selected set to Treasurer, otherwise set to existng value
-/**********
-//var elemStr = '<div><input id="'+options.id +'_treas" type="radio" size="10" name="fee" value="Treasurer" checked>Treasurer<br>'+
-var elemStr = '<div><input id="'+options.id +'_treas" type="radio" size="10" name="fee" value="Treasurer" '+treaschecked+'  >Treasurer<br>'+  // no default
-						'<input id="'+options.id +'_pres" type="radio" size="10" name="fee" value="President" '+preschecked+'  >President<br>'+
-						'<input id="'+options.id +'_bank" type="radio" size="10" name="fee" value="Bank" '+bankchecked+'  >Bank<br>'+
-						'<input id="'+options.id + '_other' +
-                        '" type="radio" size="20" name="fee" value="other" '+otherchecked +'> Other  '+
-						'<input id="'+options.id +'_text" type="text" size="20" name="feewhere" onfocus="focusOther()" value=	"'+value+'" ></div>';
-          // return DOM element from jQuery object
-          return $(elemStr)[0];
-		  }
- 
-function myvalue(elem, operation, value) {
-    if(operation === 'get') {
-      // return $(elem).val();
-	  var fred=$('input[id*="amtpaid"]').val();
-	  var fred=$('input[id*="feewhere_text"]').val();
-	 if( $('input:radio[name="fee"]:checked').val() =='other') return  fred;
-		  else return $('input:radio[name="fee"]:checked').val();
-    } else if(operation === 'set') {
-       $('input',elem).val(value);
-    }
-}
-function phoneelem (value, options) { 
-//********  get current value of phone 
-return $("<input type='text' size='10' value='"+value+"'/>");
-}
-function phonevalue(elem, operation, value) {
-   if(operation === 'get') {
-      // return $(elem).val();
-	  var fred=$('input[id*="phone"][class="customelement"]').val();
-	  if ( ~fred.indexOf("skype_c2c")  ) {   // its a skype click2call entry so strip out the actual phone number
-	  // find the text '<span class="skype_c2c_text_span">'  the number follows  up to '</span>'  
-	  var fred2 = fred.match(/<span class="skype_c2c_text_span">([\d\s]*)/)[1];
-
-	  return fred2;
-	  }
-
-	 return fred;
-	// return value.val();
-/***	 if( $('input:radio[name="fee"]:checked').val() =='other') return  fred;
-		  else return $('input:radio[name="fee"]:checked').val();
-   } else if(operation === 'set') {
-       $('input',elem).val(value);
-    } **/ 
-	/***
-}function mobileelem (value, options) { 
-//********  get current value of phone 
-return $("<input type='text' size='10' value='"+value+"'/>");
-}
-function mobilevalue(elem, operation, value) {
-   if(operation === 'get') {
-      // return $(elem).val();
-	  var fred=$('input[id*="mobile"][class="customelement"]').val();
-	  if ( ~fred.indexOf("skype_c2c")  ) {   // its a skype click2call entry so strip out the actual phone number
-	  // find the text '<span class="skype_c2c_text_span">'  the number follows  up to '</span>'  
-	  var fred2 = fred.match(/<span class="skype_c2c_text_span">([\d\s]*)/)[1];
-
-	  return fred2;
-	  }
-
-	 return fred;
-	// return value.val();
-/***	 if( $('input:radio[name="fee"]:checked').val() =='other') return  fred;
-		  else return $('input:radio[name="fee"]:checked').val();
-  **/ /**  } else if(operation === 'set') {
-       $('input',elem).val(value);
-    }
-}
-**/
 var myrole= $('#myrole').text();
 if (myrole == 'user') {myeditability=false;hidemoney=true;paideditability=false;
 $("#bedit").hide();$("#badd").hide();$("#bdelr").hide();$("#bdelnr").hide();
@@ -163,8 +48,8 @@ else {myeditability=false; paideditability=false;hidemoney=false;}
 			page:1, //LEY
 
 			onSelectRow: getDetail,
-			rowNum: 10, 
-			rowList: [10, 20, 30],
+			rowNum: 5, 
+			rowList: [5, 10, 15],
 			sortname: "event_date",
 			sortorder: "asc", 
 			viewrecords: true,
@@ -206,8 +91,8 @@ else {myeditability=false; paideditability=false;hidemoney=false;}
 		$('#list').jqGrid('filterToolbar',{searchOperators: true,	});
 
 	// detail grid
-   /***     $("#requester_id").jqGrid({
-       url: "/app/views/attendeegrid/0", 
+     $("#jqGridRequester").jqGrid({
+       url: "/app/views/requestergrid/0", 
 		editurl:"/editattendee",
         datatype: "json",
 		jsonReader : {
@@ -220,7 +105,7 @@ else {myeditability=false; paideditability=false;hidemoney=false;}
 			},
 		ignoreCase: true,
         mtype: "GET",
-        colNames: ["ID","Name", "Member No.", "Member\nPaid", "Member/Guest","Requester Email","Status","Comment","Requested at","",""],//],
+        colNames: ["ID","Name", "Member No.", "Member\nPaid", "Member/Guest","Requester Email","Status","Num Requested","Requested at","",""],//],
         colModel: [
            { name:"id",hidden:true},
 			{ name: "name", width: 160,editable: myeditability, edittype:"text",
@@ -232,7 +117,7 @@ else {myeditability=false; paideditability=false;hidemoney=false;}
 			{ name: "member_guest", width: 85, align: "right",editable: myeditability, edittype:'custom',searchoptions : {sopt: ["eq"] } ,editrules:{custom:true,required:false}},
             { name: "requester_email", width: 85, align: "right",editable: myeditability, edittype:'custom',editrules:{custom:true,required:false}},  
             { name: "request_status", width: 85, align: "right",editable: myeditability,searchoptions : {sopt: ["eq"] }, edittype:"text" ,editrules: { email: true, required: false},}, 
-            { name: "request_comment", width: 185, align: "right",editable: myeditability,searchoptions : {sopt: ["eq"] }, edittype:"text" ,editrules: { email: true, required: false},}, 
+            { name: "number_requested", width: 185, align: "right",editable: myeditability,searchoptions : {sopt: ["eq"] }, edittype:"text" ,editrules: { email: true, required: false},}, 
              { name: "created_at", width: 185, align: "right",editable: myeditability,searchoptions : {sopt: ["eq"] }, edittype:"text" ,editrules: { email: true, required: false},}, 
 
 			{ name:"",hidden:true},
@@ -241,6 +126,109 @@ else {myeditability=false; paideditability=false;hidemoney=false;}
 			
 				],
 			pager: "#pager2",
+			page:1, //LEY
+
+			onSelectRow: getDetail2,
+			rowNum: 10, 
+			rowList: [10, 20, 30],
+			sortname: "created_at",
+			sortorder: "asc", 
+			viewrecords: true,
+			loadonce:true,  //LEY
+			gridview: true,
+			autoencode: true,
+			caption: "",
+			height:'auto',
+			altRows: false,
+			footerrow : true,
+			//userDataOnFooter : true,
+			multiselect: false,
+			ajaxRowOptions: { async: true },
+			//cellEdit:true,
+			// multikey: "ctrlKey", 
+			loadComplete:function() {
+			//var count = $("#list").jqGrid('getGridParam','reccount');
+			var myrole= $('#myrole').text();
+			var count = $('#jqGridRequester').jqGrid('getGridParam','data').length;
+
+			},
+
+
+})	;	
+            var lastSelection;
+// use the onSelectRow that is triggered on row click to show a details grid	
+
+function getDetail(rowid,selected) { var grid = $("#list");
+					if(rowid != null) {
+					xid= $("#list").jqGrid('getCell',rowid,'id');
+					xname= $("#list").jqGrid('getCell',rowid,'event_name');
+
+				/***		jQuery("#tree2").jqGrid('setGridParam',{url: "data.json2/"+xid,datatype: 'json'}); // the last setting is for demo only
+						jQuery('#tree2').jqGrid('clearGridData');
+						//jQuery("#tree2").jqGrid('setGridParam',{datatype:'json', page:1}).trigger('reloadGrid');
+						jQuery("#tree2").trigger("reloadGrid", { fromServer: true, page: 1 });
+						jQuery("#tree2").jqGrid('setCaption', 'Attendees Grid for event::'+xname+' '+xid);
+					} **/
+				jQuery("#jqGridRequester").jqGrid('setGridParam',{url: "requestergrid/"+xid,datatype: 'json'}); // the last setting is for demo only
+				jQuery('#jqGridRequester').jqGrid('clearGridData');
+				//jQuery("#tree2").jqGrid('setGridParam',{datatype:'json', page:1}).trigger('reloadGrid');
+				jQuery("#jqGridRequester").trigger("reloadGrid", { fromServer: true, page: 1 });
+				jQuery("#jqGridAttendees").trigger("reloadGrid", { fromServer: true, page: 1 });
+				jQuery("#jqGridRequester").jqGrid('setCaption', 'Requester Grid for event::'+xname+' '+xid);		
+					}
+		//		 grid.jqGrid('FormToGrid', id,'#FormPost');
+		//		 grid.jqGrid('editRow',id, true,  '','','','',editreload); //rowid, keys, oneditfunc, successfunc, url, extraparam, aftersavefunc,errorfunc, afterrestorefunc
+        //            lastSelection = id;
+					//$("#"+id+"_formattedvalue").focus();
+                
+            }
+function getDetail2(rowid,selected) { var grid = $("#list");
+					if(rowid != null) {
+					xid= $("#jqGridRequester").jqGrid('getCell',rowid,'id');
+					xname= $("#jqGridRequester").jqGrid('getCell',rowid,'name');
+
+				jQuery("#jqGridAttendees").jqGrid('setGridParam',{url: "attendeegrid3/"+xid,datatype: 'json'}); // the last setting is for demo only
+				//jQuery('#jqGridRequester').jqGrid('clearGridData');
+				//jQuery("#tree2").jqGrid('setGridParam',{datatype:'json', page:1}).trigger('reloadGrid');
+				jQuery("#jqGridAttendees").trigger("reloadGrid", { fromServer: true, page: 1 });
+				jQuery("#jqGridAttendees").jqGrid('setCaption', 'Guest Grid for ::'+xname+' '+xid);		
+					}
+
+                
+            }
+			
+		$("#jqGridAttendees").jqGrid({
+       url: "/app/views/attendeegrid3/-1", 
+		editurl:"/editattendee3",
+        datatype: "json",
+		jsonReader : {
+		  root:"attendeedata",
+		  page: "currpage",
+		  total: "totalpages",
+		  records: "totalrecords",
+		  repeatitems: false,
+		  id: "0"
+			},
+		ignoreCase: true,
+        mtype: "GET",
+        colNames: ["ID","Name", "Member No.", "Member\nPaid", "Member/Guest","Status","",""],//],
+        colModel: [
+           { name:"id",hidden:true},
+			{ name: "name", width: 160,editable: myeditability, edittype:"text",
+                            // show search options
+                            searchoptions : {sopt: ["cn"] },  // ge = greater or equal to, le = less or equal to, eq = equal to  	
+							editrules: { number: false, required: true}},
+             {name: "membnum", width: 80,editable: myeditability, edittype:"text", editrules: { number: false, required: true}},
+			 { name: "member_paid", width:80,searchoptions : {sopt: ["cn"] }, searchrules:{integer:true},sorttype:'number'}, //  eq = equal to  	
+			{ name: "member_guest", width: 85, align: "right",editable: myeditability, edittype:'custom',searchoptions : {sopt: ["eq"] } ,editrules:{custom:true,required:false}},
+             { name: "request_status", width: 85, align: "right",editable: myeditability,searchoptions : {sopt: ["eq"] }, edittype:"text" ,editrules: { email: true, required: false},}, 
+
+			{ name:"",hidden:true},
+			{ name:"",hidden:true},
+			
+			
+				],
+			pager: "#pager3",
 			page:1, //LEY
 
 			//onSelectRow: editRow,
@@ -264,32 +252,12 @@ else {myeditability=false; paideditability=false;hidemoney=false;}
 			loadComplete:function() {
 			//var count = $("#list").jqGrid('getGridParam','reccount');
 			var myrole= $('#myrole').text();
-			var count = $('#requester_id').jqGrid('getGridParam','data').length;
+			var count = $('#jqGridRequester').jqGrid('getGridParam','data').length;
 
 			},
 
 
-})	;	**/
-            var lastSelection;
-// use the onSelectRow that is triggered on row click to show a details grid	
-
-function getDetail(rowid,selected) { var grid = $("#list");
-					if(rowid != null) {
-					xid= $("#list").jqGrid('getCell',rowid,'id');
-					xname= $("#list").jqGrid('getCell',rowid,'event_name');
-
-						jQuery("#tree2").jqGrid('setGridParam',{url: "data.json2/"+xid,datatype: 'json'}); // the last setting is for demo only
-						jQuery('#tree2').jqGrid('clearGridData');
-						//jQuery("#tree2").jqGrid('setGridParam',{datatype:'json', page:1}).trigger('reloadGrid');
-						jQuery("#tree2").trigger("reloadGrid", { fromServer: true, page: 1 });
-						jQuery("#tree2").jqGrid('setCaption', 'Attendees Grid for event::'+xname+' '+xid);
-					}
-		//		 grid.jqGrid('FormToGrid', id,'#FormPost');
-		//		 grid.jqGrid('editRow',id, true,  '','','','',editreload); //rowid, keys, oneditfunc, successfunc, url, extraparam, aftersavefunc,errorfunc, afterrestorefunc
-        //            lastSelection = id;
-					//$("#"+id+"_formattedvalue").focus();
-                
-            }
+})	;	
 /***********			
 function editreload(rowid, result) {
 			//get response and update the local grid for those values that are computed i.e. amtpaidthisyear
@@ -401,7 +369,7 @@ jQuery('#tree').jqGrid({
 				},
 				"pager":"#pager3"
 			});	
-		***/
+	
 			
 jQuery('#tree2').jqGrid({
 				"url":"data.json2/0",
@@ -484,23 +452,25 @@ jQuery('#tree2').jqGrid({
 				},
 				"pager":"#pager4"
 			});	
-		
+			***/
  
 }); 
 
 
 </script>
-    <!-- contents of attend event/list.htm -->
+    <!-- contents of attend event/list3.htm -->
 	<table id="list"><tr><td></td></tr></table> 
     <div id="pager"></div> 
 	<br>
- <!-- 		<table id="requester_id"><tr><td></td></tr></table> 
+ 	<table id="jqGridRequester"><tr><td></td></tr></table> 
     <div id="pager2"></div> 
 	<br>
-	    <table id="tree"></table> 
-    <div id="pager3"></div>	<br>-->
+	<table id="jqGridAttendees"><tr><td></td></tr></table> 
+    <div id="pager3"></div> 
+	    <!--     <table id="tree"></table> 
+    <div id="pager3"></div>	<br>
 	    <table id="tree2"></table>
-    <div id="pager4"></div>
+    <div id="pager4"></div> -->
 
    
 
