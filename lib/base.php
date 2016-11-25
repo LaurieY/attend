@@ -1212,6 +1212,8 @@ final class Base extends Prefab implements ArrayAccess {
 		$types=array('sync','ajax');
 		preg_match('/([\|\w]+)\h+(?:@(\w+)(?:(\(.+?)\))*|([^\h]+))'.
 			'(?:\h+\[('.implode('|',$types).')\])?/',$pattern,$parts);
+//require_once 'krumo/class.krumo.php'; 	 //LEY
+//krumo($parts);		//LEY
 		$verb=strtoupper($parts[1]);
 		if ($parts[2]) {
 			if (empty($this->hive['ALIASES'][$parts[2]]))

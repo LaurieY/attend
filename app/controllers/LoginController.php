@@ -1,5 +1,5 @@
 <?php
-class LoginController extends Controller {
+class LoginController extends Controller{
 function startup() {
 	$f3=$this->f3;
 	 $f3->set('message','');
@@ -36,7 +36,7 @@ function auth() {
 	$thispassword = $f3->get('SESSION.password') ;
 		if ($this->checkpwd($thisuserid,$thispassword) ){
 		
-		$f3->reroute('/attend');
+		$f3->reroute('/attend2');
 		
 		}
 		else 
@@ -44,7 +44,7 @@ function auth() {
 		//$f3->reroute('/login');
 		}
 	}	
- function checkpwd($thisuserid,$thispassword) { 
+function checkpwd($thisuserid,$thispassword) { 
 	$f3=$this->f3;
 	$auth_logger = new Log('auth.log');
 			$memuser = new DB\SQL\Mapper($this->db, 'attend_users'); 
@@ -69,9 +69,13 @@ function auth() {
 			$auth_logger->write( 'magic captcha  = '.$magiccaptcha);
 			$auth_logger->write( 'IP start  = '.substr($f3->get('IP'),0,9));
 			$failpost=$captcha && strtoupper($f3->get('POST.captcha'))!=$captcha;
-			$failmagic = ($captcha && strtoupper($f3->get('POST.captcha'))!=$magiccaptcha);
+			$failmagic =false;
+			
+			if ($thisuser->username!='admin') {$failmagic = ($captcha && strtoupper($f3->get('POST.captcha'))!=$magiccaptcha);
 			$failip = (substr($f3->get('IP'),0,9)!='192.168.1');
-			$auth_logger->write( ' fail failpost='.$failpost.'fail failmagic='.$failmagic.' fail failip='.$failip);
+			}
+			
+			$auth_logger->write( ' fail failpost='.$failpost.' fail failmagic='.$failmagic.' fail failip='.$failip);
 			if ($failpost && ($failmagic ||$failip))
 			{$f3->set('message','Invalid CAPTCHA code');
 				return false;}
@@ -101,7 +105,7 @@ function auth() {
 	return true;
 		}
 
-public function login() {
+function login() {
 	$f3=$this->f3;
 		$login_logger = new Log('login.log');
 		//$login_logger->erase();
@@ -177,8 +181,6 @@ function logout() {
 		$this->f3->clear('SESSION');
 		
 		$this->f3->reroute('/login');
-
 	}		
 	
-
 }

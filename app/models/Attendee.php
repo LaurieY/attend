@@ -133,7 +133,7 @@ require_once 'krumo/class.krumo.php';
 //krumo(	$this->id	);
 	
 	$this->save();
-	return $this;
+	return $this->cast();
 			
 }
 

@@ -89,12 +89,12 @@ function action_event_post () {
 		$f3=Base::instance();
 		$uselog=$f3->get('uselog');
 		$api_logger = new MyLog('api.log');
-		$api_logger->write( 'Entering action_event_post #114 POST='.var_export($f3->get('POST'),true),$uselog  ) ;	
+		$api_logger->write( 'Entering action_event_post #92 POST='.var_export($f3->get('POST'),true),$uselog  ) ;	
 		// POST contains only the id and the action to be performed
 		
 		$action = $f3->get('POST')['action'];
 		$event = new Event($this->db);
-		$api_logger->write( 'Entering action_event_post #119 with action'.var_export($action,true),$uselog  ) ;
+		$api_logger->write( 'Entering action_event_post #97 with action'.var_export($action,true),$uselog  ) ;
 		switch ($action){
 		case 'trash':	
 // mark the event as not active
@@ -142,8 +142,8 @@ function action_event_post () {
 		//******* Each array in the form 
 		//******* 'event_info'=> array('event_id','event_name','event_date','event_type','event_contact_email','event_limit'
 		$daily_array = json_decode($f3->get('POST')['daily'],true);
-	//	$api_logger->write( 'IN action_event_post Daily Job  = '.var_export($f3->get('POST'),true),$uselog  ) ;
-	//	$api_logger->write( 'IN action_event_post Daily Array  = '.var_export($daily_array,true),$uselog  ) ;
+		$api_logger->write( 'IN action_event_post Daily Job  = '.var_export($f3->get('POST'),true),$uselog  ) ;
+		$api_logger->write( 'IN action_event_post #146 Daily Array  = '.var_export($daily_array,true),$uselog  ) ;
 		$this->do_daily1($daily_array);
 		break;
 		
@@ -161,21 +161,21 @@ function do_daily1($daily_array) {
 		$f3=Base::instance();
 		$uselog=$f3->get('uselog');
 		$api_logger = new MyLog('api.log');
-		$api_logger->write( 'Entering do_daily1 #185 =',$uselog  ) ;	
+		$api_logger->write( 'Entering do_daily1 #164 daily_array = '.var_export($daily_array,true),$uselog  ) ;	
 
 		$event = new Event($this->db);	
 		$past_events = $event->past();
-	//	krumo("an event = ".var_export($past_events,true));
-		//		$api_logger->write( 'do_daily1 #190 '.var_export($past_events,true),$uselog  ); 
+		krumo("an event = ".var_export($past_events,true));
+		//		$api_logger->write( 'do_daily1 #169 '.var_export($past_events,true),$uselog  ); 
 		foreach($past_events as $an_event) {
-	//		krumo("an event = ".var_export($an_event,true));
-	//		krumo("an event ID = ".var_export($an_event->event_id	,true));
+			krumo("an event = ".var_export($an_event,true));
+			krumo("an event ID = ".var_export($an_event->event_id	,true));
 		$an_event->active='N';
 		$an_event->save();
 		$changes_ary['deactivates']++;
 		}
 		/*************  Now go through the received array  $daily_array  **/
-		$api_logger->write( 'do_daily1 #198 '.var_export($daily_array,true),$uselog  );
+		$api_logger->write( 'do_daily1 #178 '.var_export($daily_array,true),$uselog  );
 		foreach($daily_array as $an_event) {
 		
 			$event_id = $an_event['event_id'];
@@ -184,6 +184,7 @@ function do_daily1($daily_array) {
 			$an_event['active']='Y';	
 	//$api_logger->write( 'do_daily1 #204 '.var_export($an_event,true),$uselog  );			
 			$resp=$this->add_event($an_event);
+			krumo($resp);
 			//update the tally of changes
 				switch ($resp) {
 				case 'add':
@@ -415,7 +416,7 @@ function addattend() {
 		switch ($attendees_ok['response']){ 
 		case 'Booked': 
 		case 'Waitlisted':
-		return $attendees_ok['response'];
+		echo $attendees_ok['response'];
 		break;
 	
 		//$event
@@ -530,6 +531,7 @@ $api_logger->write( 'Adding attendees #486 with r3 = '.var_export($r3,true),$use
 	$event->save();
 	//krumo($waiting_count);
 	$api_logger->write( $people_count.' attendees and waitlisted '.$waiting_count.' with email text  '.$resp_text,$uselog  );
+	$api_logger->write( $people_count.' Booked  and waitlisted '.$waiting_count.' with email text  '.$resp_text,$uselog  );
 	$resp=array('ok'=>true, 'response'=>'Booked','added'=> $people_count, 'waitlisted'=>$waiting_count);
 	if($waiting_count >0) $resp['response']='Waitlisted';
 	
