@@ -9,22 +9,26 @@ $f3->set('TZ', 'Europe/Madrid');
 
 
 
+$f3->route('GET /documentation',
+  function() {
+     echo \Template::instance()->render('../../outputdoc/index.html');
+  }
+);
+
 $f3->route('GET /app/views/feespertypes [ajax]','AjaxController->getfeespertypes');
-
-
 $f3->route('GET /usergrid [ajax]','AjaxController->users');
 $f3->route('POST /edituser [ajax]','AjaxController->edituser');
 
 $f3->route('GET /attend','AttendanceController->index');
 $f3->route('GET /attend2','AttendanceController->index2');
 $f3->route('GET /attend3','AttendanceController->index3');
-$f3->route('GET /eventgrid [ajax]','AttendanceAjaxController->event_grid');
-$f3->route('GET /app/views/attendeegrid/@eventid [ajax]','AttendanceAjaxController->attendee_grid');
-$f3->route('GET /app/views/attendeegrid2/@eventid [ajax]','AttendanceAjaxController->attendee_grid2');
-$f3->route('GET /app/views/attendeegrid3/@requesterid [ajax]','AttendanceAjaxController->attendee_grid3');
-$f3->route('GET /app/views/requestergrid/@eventid [ajax]','AttendanceAjaxController->requester_grid');
-$f3->route('GET /app/views/data.json [ajax]','AttendanceAjaxController->data_json');
-$f3->route('GET /app/views/data.json2/@eventid [ajax]','AttendanceAjaxController->data_json2');
+$f3->route('GET /eventGrid [ajax]','AttendanceAjaxController->eventGrid');
+$f3->route('GET /app/views/attendeegrid/@eventid [ajax]','AttendanceAjaxController->attendeeGrid');
+$f3->route('GET /app/views/attendeegrid2/@eventid [ajax]','AttendanceAjaxController->attendeeGrid2');
+$f3->route('GET /app/views/attendeegrid3/@requesterid [ajax]','AttendanceAjaxController->attendeeGrid3');
+$f3->route('GET /app/views/requestergrid/@eventid [ajax]','AttendanceAjaxController->requesterGrid');
+$f3->route('GET /app/views/data.json [ajax]','AttendanceAjaxController->dataJson');
+$f3->route('GET /app/views/data.json2/@eventid [ajax]','AttendanceAjaxController->dataJson2');
 $f3->route('GET /eventfiddle','AttendanceAjaxController->fiddle');
 
 
@@ -161,18 +165,18 @@ $f3->route('GET /app/views/attendance/attendance_list_name','AttendanceControlle
 //$f3->route('POST /checknumber','ApiController->checknumber2'); 
 //$f3->route('GET /getnames','ApiController->getnames'); 
 $f3->route('POST /addattend','AttendanceAjaxController->addattend'); 
-$f3->route('POST /addeventpost','AttendanceAjaxController->add_event_post');
+$f3->route('POST /addeventpost','AttendanceAjaxController->addEventPost');
 
-$f3->route('POST /event','AttendanceAjaxController->action_event_post'); 
+$f3->route('POST /event','AttendanceAjaxController->actionEventPost'); 
  
  
-$f3->route('POST /addevent','AttendanceAjaxController->add_event'); 
+$f3->route('POST /addevent','AttendanceAjaxController->addEvent'); 
 $f3->route('GET /testattend','AttendanceAjaxController->testattend'); 
 $f3->route('GET /testattend2','AttendanceAjaxController->testattend2'); 
 $f3->route('GET /testattend3','AttendanceAjaxController->testattend3'); 
-$f3->route('GET /geteventinfo/@id','AttendanceAjaxController->get_event_info'); 
+$f3->route('GET /getEventInfo/@id','AttendanceAjaxController->getEventInfo'); 
 
-$f3->route('GET /do_daily1','AttendanceAjaxController->do_daily1');
+$f3->route('GET /do_daily1','AttendanceAjaxController->doDaily1');
 
 
 $f3->route('GET /unitattend/@test','TestController->unitattend');

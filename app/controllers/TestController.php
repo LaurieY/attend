@@ -92,20 +92,20 @@ function unitattend1(&$test,$testnum) {  //return test object
 		case 1:	
 		$this->db->exec('delete from events where event_id = :id', array(':id'=>$this->event_info['event_id']));	
 		$this->db->exec('delete from events where event_id = :id', array(':id'=>$this->event_info['event_id']));	
-		$this->db->exec('delete from events where event_id = :id', array(':id'=>0));	//Needed to allow it to be repeatable as I don't create the event in a direct call to add_attendees
+		$this->db->exec('delete from events where event_id = :id', array(':id'=>0));	//Needed to allow it to be repeatable as I don't create the event in a direct call to addAttendees
 		//$this->event->add($event_info);
 	//	krumo($this->event_info);
-		$attend_resp =$this->attend->add_attendees($this->persons,$this->comment_ary, $this->event_info);
+		$attend_resp =$this->attend->addAttendees($this->persons,$this->comment_ary, $this->event_info);
 		//check the attendee added
 		$test->expect(
 			$attend_resp!= array(),
-			'Test 1a:- Not Blank Array from add_attendees'
+			'Test 1a:- Not Blank Array from addAttendees'
 		);
 		//check the event wasn't added
 		$event_resp = $this->event->exists($this->event_info);
 		$test->expect(
 			!$event_resp,
-			'Test 1b:- False for event now exists from  add_attendees'
+			'Test 1b:- False for event now exists from  addAttendees'
 		);		
 
 		$this->event->add($this->event_info);
@@ -115,26 +115,26 @@ function unitattend1(&$test,$testnum) {  //return test object
 			'Test 1c:- true for event now exists from  add an event'
 		);		
 		
-		$this->db->exec('delete from events where event_id = :id', array(':id'=>0));	//Needed to allow it to be repeatable as I don't create the event in a direct call to add_attendees		
+		$this->db->exec('delete from events where event_id = :id', array(':id'=>0));	//Needed to allow it to be repeatable as I don't create the event in a direct call to addAttendees		
 		break;
 		case 2:
 		$this->event->add($this->event_info);
 		$this->db->exec('delete from events where event_id = :id', array(':id'=>$this->event_info['event_id']));	
 		$this->db->exec('delete from attendees where event_id = :id', array(':id'=>$this->event_info['event_id']));	
-		$this->db->exec('delete from events where event_id = :id', array(':id'=>0));	//Needed to allow it to be repeatable as I don't create the event in a direct call to add_attendees
+		$this->db->exec('delete from events where event_id = :id', array(':id'=>0));	//Needed to allow it to be repeatable as I don't create the event in a direct call to addAttendees
 
-		$attend_resp =$this->attend->add_attendees($this->persons,$this->comment_ary, $this->event_info);
+		$attend_resp =$this->attend->addAttendees($this->persons,$this->comment_ary, $this->event_info);
 	//	krumo($attend_resp);
 			$test->expect(
 			$attend_resp['ok'],
-			'Test 2:- ok=> true in array from add_attendees for 1 person '
+			'Test 2:- ok=> true in array from addAttendees for 1 person '
 		);
 
 			$test->expect(
 			($attend_resp['added']==1),
-			'Test 2:- added =1 in array from add_attendees for 1 person received '.$attend_resp['added']
+			'Test 2:- added =1 in array from addAttendees for 1 person received '.$attend_resp['added']
 		);		
-		$this->db->exec('delete from events where event_id = :id', array(':id'=>0));	//Needed to allow it to be repeatable as I don't create the event in a direct call to add_attendees
+		$this->db->exec('delete from events where event_id = :id', array(':id'=>0));	//Needed to allow it to be repeatable as I don't create the event in a direct call to addAttendees
 		break;
 		case 3:
 
@@ -150,10 +150,10 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
 		$body_all_json = json_encode($body_all);//krumo($body_all_json);
 		//$attendees_post = json_encode();
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
-	//	krumo($test_resp);
-			$test->expect($test_resp== 'Booked',
-			'Test 3:- POST to addattend expect "Booked" ,received '.var_export($test_resp,true) 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+	//	krumo($testResp);
+			$test->expect($testResp== 'Booked',
+			'Test 3:- POST to addattend expect "Booked" ,received '.var_export($testResp,true) 
 		)	;	
 		break;
 		/****** clear relevant attendees set limit to 2********/
@@ -168,15 +168,15 @@ function unitattend1(&$test,$testnum) {  //return test object
 		/*********  The event has been deleted it should be dry ******/
 			$test->expect($this->event->dry(), 
 			'Test 4a:- delete Event check event_id not exists, received '.$this->event->dry() );	
-		$test_resp =$this->event->add($this->event_info);
-		//krumo($test_resp);
+		$testResp =$this->event->add($this->event_info);
+		//krumo($testResp);
 		/*********  The event has been created it should be NOT dry ******/		
 		$this->event->load(array('event_id=?',$this->event_info['event_id']));
 			$test->expect(!$this->event->dry(), 
 			'Test 4b:- delete Event check event_id does exists, received '.$this->event->dry() );	
 		/*********  The event has been created it should have the correct event_id ******/		
-			$test->expect($test_resp->event_id == $this->event_info['event_id'],
-			'Test 4ca:- Create Event check event_id, received '.var_export($test_resp->event_id,true) );	
+			$test->expect($testResp->event_id == $this->event_info['event_id'],
+			'Test 4ca:- Create Event check event_id, received '.var_export($testResp->event_id,true) );	
 			
 				$test->expect(!$this->event->event_full,
 			'Test 4cb:- Create Event check event_full false, received '.var_export($this->event->event_full,true) );	
@@ -192,14 +192,14 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$body_all_json = json_encode($body_all);//krumo($body_all_json);
 		//$attendees_post = json_encode();
 		$url='http://testattend.u3a.world/addattend';
-//		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+//		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
 
 		$options = array(    'method'  => 'POST',    'content' => $body_all_json);
-//		$test_resp=\Web::instance()->request($url,$options); //('POST /addattend [sync]',NULL,NULL, $body_all_json); 
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
-		//krumo($test_resp);
-			$test->expect($test_resp== 'Booked',
-			'Test 4d:- POST to addattend expect "Booked" ,received '.var_export($test_resp,true) 
+//		$testResp=\Web::instance()->request($url,$options); //('POST /addattend [sync]',NULL,NULL, $body_all_json); 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+		//krumo($testResp);
+			$test->expect($testResp== 'Booked',
+			'Test 4d:- POST to addattend expect "Booked" ,received '.var_export($testResp,true) 
 		)	;	
 		$this->event->load(array('event_id=?',$this->event_info['event_id']));
 			$test->expect($this->event->event_current_count== 3,
@@ -227,15 +227,15 @@ function unitattend1(&$test,$testnum) {  //return test object
 	//	krumo("4I");
 		// Now try to add same attendees again check not duplicated attendees and they are added ok
 	//	krumo($body_all_json);
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
 		$attendees_count= $this->attendee->count();
 			$test->expect($attendees_count==3,
 			'Test 4i:- POST to addattend expect only 3 attendees, received '.$attendees_count
 		)	;
 	//	krumo("4J");
 			$api_logger->write( 'Entering unitattend1  4J #236',$uselog  );	
-		$test->expect($test_resp== 'Booked',
-			'Test 4j:- POST to addattend expect "Booked" ,received '.var_export($test_resp,true) 
+		$test->expect($testResp== 'Booked',
+			'Test 4j:- POST to addattend expect "Booked" ,received '.var_export($testResp,true) 
 		)	;	
 	//Now set attendess to be just the 1st name, expect it to be NOT booked as per policy-1-B
 
@@ -245,10 +245,10 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
 		$body_all_json = json_encode($body_all);//krumo($body_all_json);		
 	
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
-	//	krumo($test_resp);
-			$test->expect($test_resp!= 'Booked',
-			'Test 4k:- POST to addattend expect NOT  "Booked" ,received '.var_export($test_resp,true) 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+	//	krumo($testResp);
+			$test->expect($testResp!= 'Booked',
+			'Test 4k:- POST to addattend expect NOT  "Booked" ,received '.var_export($testResp,true) 
 		)	;	
 		// Now try adding #1 and #4 should get #1 booked #4 waitlisted
 		$this->persons =array();
@@ -259,9 +259,9 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
 		$body_all_json = json_encode($body_all);//krumo($body_all_json);		
 	//krumo("4L");
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
-			$test->expect($test_resp!= 'Booked',
-			'Test 4l:- POST to addattend expect NOT  "Booked" ,received '.var_export($test_resp,true) 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+			$test->expect($testResp!= 'Booked',
+			'Test 4l:- POST to addattend expect NOT  "Booked" ,received '.var_export($testResp,true) 
 		)	;	
 		$this->event->load(array('event_id=?',$this->event_info['event_id']));
 			$test->expect($this->event->event_current_count== 5,
@@ -281,14 +281,14 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$this->persons[] = $this->attendee1;
 		$this->event_info['number_of_names'] =1;
 		$this->event_info['event_limit'] =3;
-		$test_resp =$this->event->add($this->event_info);
+		$testResp =$this->event->add($this->event_info);
 		$this->comment_ary= array('comment'=>"ONE");
 		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
 		$body_all_json = json_encode($body_all);		
 //krumo("5A");	die();
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
-			$test->expect($test_resp == 'Booked',
-			'Test 5a:- POST to addattend expect   "Booked" ,received '.var_export($test_resp,true) 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+			$test->expect($testResp == 'Booked',
+			'Test 5a:- POST to addattend expect   "Booked" ,received '.var_export($testResp,true) 
 		)	;
 			$this->event->load(array('event_id=?',$this->event_info['event_id']));
 			$test->expect($this->event->event_current_count== 1,
@@ -312,9 +312,9 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
 		$body_all_json = json_encode($body_all);		
 	//krumo("5A");
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 	
-			$test->expect($test_resp == 'Booked',
-			'Test 5e:- POST to addattend expect   "Booked" ,received '.var_export($test_resp,true) 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 	
+			$test->expect($testResp == 'Booked',
+			'Test 5e:- POST to addattend expect   "Booked" ,received '.var_export($testResp,true) 
 		)	;
 			$this->event->load(array('event_id=?',$this->event_info['event_id']));
 			$test->expect($this->event->event_current_count== 2,
@@ -340,12 +340,12 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$this->persons[] = $this->attendee2;
 		$this->event_info['number_of_names'] =2;
 		$this->event_info['event_limit'] =1;
-		$test_resp =$this->event->add($this->event_info);
+		$testResp =$this->event->add($this->event_info);
 		$this->comment_ary= array('comment'=>"ONE");
 		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
 		$body_all_json = json_encode($body_all);		
-	//krumo("5A");
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
 		$attendee_count = $this->attendee->count(array('request_status ="Booked" and event_id=?',$this->event_info['event_id']));
 			$test->expect($attendee_count== 2,
 			'Test 6a:- POST to addattend expect Booked count  ==2 ,received '.$attendee_count
@@ -355,7 +355,7 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$this->persons[] = $this->attendee3;
 		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
 		$body_all_json = json_encode($body_all);
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
 		$attendee_count = $this->attendee->count(array('request_status ="Booked" and event_id=?',$this->event_info['event_id']));
 			$test->expect($attendee_count== 2,
 			'Test 6b:- POST to addattend expect Booked count  ==2 ,received '.$attendee_count
@@ -370,9 +370,9 @@ function unitattend1(&$test,$testnum) {  //return test object
 		)	;	
 		// increase event capacity
 		$this->event_info['event_limit'] =4;
-		$test_resp =$this->event->add($this->event_info);
+		$testResp =$this->event->add($this->event_info);
 		// ensure no more attendees marked booked
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
 		$attendee_count = $this->attendee->count(array('request_status ="Booked" and event_id=?',$this->event_info['event_id']));
 			$test->expect($attendee_count== 2,
 			'Test 6e:- POST to addattend expect Booked count  ==2 ,received '.$attendee_count
@@ -392,7 +392,7 @@ function unitattend1(&$test,$testnum) {  //return test object
 		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
 		$body_all_json = json_encode($body_all);
 	//	krumo("6H");	
-		$test_resp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 
 		$attendee_count = $this->attendee->count(array('request_status ="Booked" and event_id=?',$this->event_info['event_id']));
 			$test->expect($attendee_count== 2,
 			'Test 6h:- POST to addattend expect Booked count  ==2 ,received '.$attendee_count
@@ -407,6 +407,43 @@ function unitattend1(&$test,$testnum) {  //return test object
 		)	;
 
 	break;	
+	case 7:
+		$this->db->exec('delete from events where event_id = :id', array(':id'=>$this->event_info['event_id']));	
+		$this->db->exec('delete from attendees', array());	
+		$this->persons =array();
+		$this->persons[] = $this->attendee1;
+		$this->persons[] = $this->attendee2;
+		$this->event_info['number_of_names'] =2;
+		$this->event_info['event_limit'] =0;
+		$testResp =$this->event->add($this->event_info);
+		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
+		$body_all_json = json_encode($body_all);		
+
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 	
+		$attendee_count = $this->attendee->count(array('request_status ="Booked" and event_id=?',$this->event_info['event_id']));
+			$test->expect($attendee_count== 2,
+			'Test 7a:- POST to addattend expect Booked count  ==2 ,received '.$attendee_count
+		)	;	
+	//	krumo($testResp);
+		$test->expect($testResp== 'Booked',
+			'Test 7b:- POST to addattend expect response Booked  ,received '.$testResp
+		)	;	
+		$this->persons[] = $this->attendee1;
+		$this->persons[] = $this->attendee3;		
+		$body_all= array('event_info'=>$this->event_info, 'persons'=>$this->persons, 'comment'=>$this->comment_ary);
+		$body_all_json = json_encode($body_all);		
+		$testResp=$this->myiMock('addattend',NULL,NULL, $body_all_json); 	
+		$attendee_count = $this->attendee->count(array('request_status ="Booked" and event_id=?',$this->event_info['event_id']));
+			$test->expect($attendee_count== 3,
+			'Test 7c:- POST to addattend expect Booked count  ==3 ,received '.$attendee_count
+		)	;	
+	//	krumo($testResp);
+		$test->expect($testResp== 'Booked',
+			'Test 7d:- POST to addattend expect response Booked  ,received '.$testResp
+		)	;	
+		
+		
+	break;
 	 }
 	// krumo($test->results());
 	 //return;

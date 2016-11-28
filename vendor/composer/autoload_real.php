@@ -15,45 +15,38 @@ class ComposerAutoloaderInita91194d74ce602f8c08f174d54d8a188
 
     public static function getLoader()
     {
- require_once 'krumo/class.krumo.php';
-
-       if (null !== self::$loader) {
+        if (null !== self::$loader) {
             return self::$loader;
         }
-//krumo(self::$loader);
+
         spl_autoload_register(array('ComposerAutoloaderInita91194d74ce602f8c08f174d54d8a188', 'loadClassLoader'), true, true);
         self::$loader = $loader = new \Composer\Autoload\ClassLoader();
         spl_autoload_unregister(array('ComposerAutoloaderInita91194d74ce602f8c08f174d54d8a188', 'loadClassLoader'));
 
-        $map = require __DIR__ . '/autoload_namespaces.php';
-        foreach ($map as $namespace => $path) {
-            $loader->set($namespace, $path);
-        }
+        $useStaticLoader = PHP_VERSION_ID >= 50600 && !defined('HHVM_VERSION');
+        if ($useStaticLoader) {
+            require_once __DIR__ . '/autoload_static.php';
 
-        $map = require __DIR__ . '/autoload_psr4.php';
-        foreach ($map as $namespace => $path) {
-            $loader->setPsr4($namespace, $path);
-        }
+            call_user_func(\Composer\Autoload\ComposerStaticInita91194d74ce602f8c08f174d54d8a188::getInitializer($loader));
+        } else {
+            $map = require __DIR__ . '/autoload_namespaces.php';
+            foreach ($map as $namespace => $path) {
+                $loader->set($namespace, $path);
+            }
 
-        $classMap = require __DIR__ . '/autoload_classmap.php';
-        if ($classMap) {
-            $loader->addClassMap($classMap);
+            $map = require __DIR__ . '/autoload_psr4.php';
+            foreach ($map as $namespace => $path) {
+                $loader->setPsr4($namespace, $path);
+            }
+
+            $classMap = require __DIR__ . '/autoload_classmap.php';
+            if ($classMap) {
+                $loader->addClassMap($classMap);
+            }
         }
 
         $loader->register(true);
 
-        $includeFiles = require __DIR__ . '/autoload_files.php';
-require_once 'krumo/class.krumo.php';
-        foreach ($includeFiles as $file) {
-				//	krumo($file);
-            composerRequirea91194d74ce602f8c08f174d54d8a188($file);
-        }
-//krumo($loader);
         return $loader;
     }
-}
-
-function composerRequirea91194d74ce602f8c08f174d54d8a188($file)
-{
-    require $file;
 }

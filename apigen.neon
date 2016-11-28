@@ -1,0 +1,4 @@
+source:
+    - /home/uaworld/testattend/app
+
+destination: /home/uaworld/public_html/testattend_docs
