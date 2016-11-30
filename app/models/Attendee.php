@@ -1,14 +1,14 @@
 <?php
-
+namespace{
 class Attendee extends DB\SQL\Mapper {
 
-    public function __construct(DB\SQL $db) {
+    public function __construct(\DB\SQL $db) {
         parent::__construct($db,'attendees');
     }
 function all() {
        // $this->load();
 	   
-	   $fw=Base::instance();
+	   $fw=\Base::instance();
 		//var_dump($fw);// need to filter by current u3ayear
 		$this->load( );
 		//$this->first();
@@ -16,29 +16,29 @@ function all() {
         return $this->query;
     }
 	
-function get_tree($event_id) {
-	$fw=Base::instance();
+function get_tree($eventId) {
+	$fw=\Base::instance();
 //	require_once 'krumo/class.krumo.php'; 
-/*************  some code to identify the number of sub attendees per requester_id
+/*************  some code to identify the number of sub attendees per requesterId
 *************	might not be needed yet
 ***********************************
 $this-$this->rcount = "count(*)";
-	$r2 = $this->select('count(*) as rcount, requester_id' ,array('event_id='.$event_id),array('group'=>'requester_id'));
+	$r2 = $this->select('count(*) as rcount, requesterId' ,array('eventId='.$eventId),array('group' => 'requesterId'));
 	krumo($this->db->log());
 	foreach($r2 as $anr2) {
-		if($anr2->requester_id >0) 	{	krumo('rid= '.$anr2->requester_id);		krumo('  '.($anr2->rcount)+1);}
+		if($anr2->requesterId >0) 	{	krumo('rid= '.$anr2->requesterId);		krumo('  '.($anr2->rcount)+1);}
 	}
 	************/
-	/**$this->level="if(requester_id>0, 1,0)";
-	$this->isLeaf='if(requester_id=0, "false","true")';**/
-	$this->level="if(requester_id<>id, 1,0)";
-	$this->isLeaf='if(requester_id=id, "false","true")';
+	/**$this->level="if(requesterId>0, 1,0)";
+	$this->isLeaf='if(requesterId=0, "false","true")';**/
+	$this->level="if(requesterId<>id, 1,0)";
+	$this->isLeaf='if(requesterId=id, "false","true")';
 	
-	$r1=$this->find(array('event_id=?',$event_id),array('order'=>'id ASC'));
+	$r1=$this->find(array('eventId=?',$eventId),array('order' => 'id ASC'));
 	foreach ($r1 as $anattendee) {
 /**	krumo('id= '	.$anattendee->id);
 	krumo(	$anattendee->name);
-	krumo('requester_id= '.	$anattendee->requester_id);
+	krumo('requesterId= '.	$anattendee->requesterId);
 	krumo('level = '.	$anattendee->level);
 	krumo('isLeaf = '.	$anattendee->isLeaf);**/
 		}
@@ -46,88 +46,88 @@ $this-$this->rcount = "count(*)";
 	return $r1;
 	
 }
-function add($attendee,$comment,$event_info,$requester_id,$request_over_limit) {
+function add($attendee,$comment,$event_info,$requesterId,$request_over_limit) {
 	//krumo($request_over_limit);
-		$fw=Base::instance();
+		$fw=\Base::instance();
 		// check if potentially over the limit, not actually over if the person is already booked
 		// only update any comments if it already exists, never change the request status if already exists
 /*		if($request_over_limit) 
-			$request_status = 'Waitlisted';
+			$requestStatus = 'Waitlisted';
 		else
-			$request_status = 'Booked';*/
+			$requestStatus = 'Booked';*/
 		//krumo($attendee);	
 		// check for the existence of a member already for this event, duplicate members not valid, just ignored and returned 'existed'
 		// it may not be a duplicate if one person is adding multiples but is unlikley so flag it in the email
 		// duplicate Guest members names have to be ignored as well, may be valid but cannot tell
-		if($attendee['member_guest'] =='M') $this->load(array('member_guest = "M" and event_id =? and event_date =? and membnum =?',
-			$event_info['event_id'], $event_info['event_date'],$attendee['number'] ));
-		if($attendee['member_guest'] =='G') $this->load(array('member_guest = "G" and event_id =? and event_date =? and name =?' ,
-			$event_info['event_id'], $event_info['event_date'],$attendee['name'] ));
+		if($attendee['memberGuest'] =='M') $this->load(array('memberGuest = "M" and eventId =? and eventDate =? and membnum =?',
+			$event_info['eventId'], $event_info['eventDate'],$attendee['number'] ));
+		if($attendee['memberGuest'] =='G') $this->load(array('memberGuest = "G" and eventId =? and eventDate =? and name =?' ,
+			$event_info['eventId'], $event_info['eventDate'],$attendee['name'] ));
 
 		if(!$this->dry()) { // duplicate person for the event 
-	//	krumo('$request_status = '.$request_status);
-		//krumo('$this->request_status = '.$this->request_status);
-	//	if($comment != $this->request_comment || ($this->request_status != $request_status)) {
+	//	krumo('$requestStatus = '.$requestStatus);
+		//krumo('$this->requestStatus = '.$this->requestStatus);
+	//	if($comment != $this->requestComment || ($this->requestStatus != $requestStatus)) {
 		// the comment has changed so add the new comment OR the request status has changed 
-		if($comment != $this->request_comment ) {
+		if($comment != $this->requestComment ) {
 			// the comment has changed so add the new comment 
-						if(is_null($this->request_comment)) $this->request_comment="";			
-							$this->request_comment=$this->request_comment.'/'.$comment;
-							//$this->request_status = $request_status;
-							//krumo($this->request_status);
+						if(is_null($this->requestComment)) $this->requestComment="";			
+							$this->requestComment=$this->requestComment.'/'.$comment;
+							//$this->requestStatus = $requestStatus;
+							//krumo($this->requestStatus);
 							$this->save();
-							return(array('updated',$this->id,$this->request_status));
+							return(array('updated',$this->id,$this->requestStatus));
 						}
-						return array('existed',$this->id,$this->request_status); //No change so no need for a db action
+						return array('existed',$this->id,$this->requestStatus); //No change so no need for a db action
 					}
 	//	krumo($this);
 // a new entry	
-// if the requester_id is -1 then this is the requester for the overall request so don't see the requester_id till after the 1st save	
-//		if($requester_id<>0) {
-	$this->requester_id  = $requester_id;
+// if the requesterId is -1 then this is the requester for the overall request so don't see the requesterId till after the 1st save	
+//		if($requesterId<>0) {
+	$this->requesterId  = $requesterId;
 //	}*/
 		if($request_over_limit) 
-			$request_status = 'Waitlisted';
+			$requestStatus = 'Waitlisted';
 		else
-			$request_status = 'Booked';
-		$this->created_at=date("Y-m-d H:i:s");	
-		$this->request_comment=$comment;
-		$this->request_status = $request_status;
+			$requestStatus = 'Booked';
+		$this->createdAt=date("Y-m-d H:i:s");	
+		$this->requestComment=$comment;
+		$this->requestStatus = $requestStatus;
 		$this->requester = $attendee['requester'];
-		$this->requester_email=$attendee['email'];	// this was added by the calling function for all the attendees
+		$this->requesterEmail=$attendee['email'];	// this was added by the calling function for all the attendees
 		$this->name=$attendee['name'];
 		$this->membnum=$attendee['number'];
-		$this->member_guest=$attendee['member_guest'];
-		$this->event_id=$event_info['event_id'];
-		$this->event_date=$event_info['event_date'];
+		$this->memberGuest=$attendee['memberGuest'];
+		$this->eventId=$event_info['eventId'];
+		$this->eventDate=$event_info['eventDate'];
 	//	krumo($this->requester);
 
 		$resp = $this->save();
 
-		if($requester_id==0) { // this was the requester entry so add its own id into the record
-							$this->requester_id  =$this->id;
+		if($requesterId==0) { // this was the requester entry so add its own id into the record
+							$this->requesterId  =$this->id;
 							// no leave it as 0 for the hierarchy search
 	
 							$this->save();
 							}		
-		return(array('added',$this->id,$this->request_status));
+		return(array('added',$this->id,$this->requestStatus));
 		
 		
 	}
-function update_count($attendee,$event_info) {
-	$fw=Base::instance();
+function updateCount($attendee,$event_info) {
+	$fw=\Base::instance();
 require_once 'krumo/class.krumo.php'; 
 	//$attendee['number'] ;
-	$this->load(array('member_guest = "M" and requester= true and event_id =? and event_date =? and membnum =?',
-			$event_info['event_id'], $event_info['event_date'],$attendee['number'] ));
+	$this->load(array('memberGuest = "M" and requester= true and eventId =? and eventDate =? and membnum =?',
+			$event_info['eventId'], $event_info['eventDate'],$attendee['number'] ));
 //krumo($this->id);
-	$requester_id = $this->id;
+	$requesterId = $this->id;
 	$this->rcount='count(*)';
-//		$r2 = $this->select('count(*) as rcount, requester_id' ,array('event_id='.$event_info['event_idz']),array('group'=>'requester_id'));
-		$r2count = $this->count(array('event_id=? AND requester_id =?',$event_info['event_id'],$requester_id));
+//		$r2 = $this->select('count(*) as rcount, requesterId' ,array('eventId='.$event_info['eventIdz']),array('group' => 'requesterId'));
+		$r2count = $this->count(array('eventId=? AND requesterId =?',$event_info['eventId'],$requesterId));
 //krumo(	 $r2count);
-	$this->load(array('member_guest = "M" and requester= true and event_id =? and event_date =? and membnum =?',
-			$event_info['event_id'], $event_info['event_date'],$attendee['number'] ));
+	$this->load(array('memberGuest = "M" and requester= true and eventId =? and eventDate =? and membnum =?',
+			$event_info['eventId'], $event_info['eventDate'],$attendee['number'] ));
 	$this->request_count= $r2count;
 //krumo(	$this->request_count);
 //krumo(	$this->id	);
@@ -139,3 +139,4 @@ require_once 'krumo/class.krumo.php';
 
 	
 	}
+}

@@ -164,7 +164,7 @@ $f3->route('GET /app/views/attendance/attendance_list_name','AttendanceControlle
 //$f3->route('POST /checknumber1','ApiController->checknumber1'); 
 //$f3->route('POST /checknumber','ApiController->checknumber2'); 
 //$f3->route('GET /getnames','ApiController->getnames'); 
-$f3->route('POST /addattend','AttendanceAjaxController->addattend'); 
+$f3->route('POST /addAttend','AttendanceAjaxController->addAttend'); 
 $f3->route('POST /addeventpost','AttendanceAjaxController->addEventPost');
 
 $f3->route('POST /event','AttendanceAjaxController->actionEventPost'); 

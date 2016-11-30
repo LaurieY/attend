@@ -25,7 +25,7 @@ class Controller {
 
 	function __construct() {
 
-        $f3=Base::instance();
+        $f3 = Base::instance();
 
         $db=new DB\SQL(
             $f3->get('db_dns') . $f3->get('db_name'),
