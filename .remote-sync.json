@@ -1,0 +1,15 @@
+{
+  "transport": "ftp",
+  "uploadOnSave": true,
+  "useAtomicWrites": false,
+  "deleteLocal": false,
+  "hostname": "ftp.u3a.es",
+  "target": "\\testattend",
+  "ignore": [
+    ".remote-sync.json",
+    ".git/**"
+  ],
+  "username": "uaworld",
+  "password": "kJ2*L7DUNY",
+  "watch": []
+}
